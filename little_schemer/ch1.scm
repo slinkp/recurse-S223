@@ -47,12 +47,12 @@
 
 ;; In guile, a list literal needs the single quote
 ;; or else it tries to call first arg as a function ??
-(print (atom? '(1 2 3)))
+(print (atom? '(1 2 3))) ;; #f
 
 ;; Here's another way
-(print (atom? (list 1 2 3)))
+(print (atom? (list 1 2 3))) ;; #f
 
-(print (atom? '()))
+(print (atom? '())) ;; #f
 
 
 (header "Page 5. Some lists!")
@@ -144,3 +144,48 @@
 (print (null? "a")) ;; #f.  "No answer", but in practice, `null?` is false for everything but empty list
 (print (null? "")) ;; #f
 (print (null? 2)) ;; #f
+
+(header "Atoms again, page 10-11")
+;; Skipping some (atom?) examples because we already did some.
+;; But what about true/false?
+(print (atom? #t)) ;; #t
+(print (atom? #f)) ;; #t
+;; (print (atom? #t #f)) ;; error, "Wrong number of arguments"
+
+(define l '(Harry had a heap of apples))
+(print (atom? (car l))) ;; #t
+(print "cdr doesn't return an atom")
+(print (atom? (cdr l))) ;; #f
+(print (atom? (cdr '(Harry)))) ;; #f
+(define l '(swing low sweet cherry oat))
+(print (car (cdr l))) ;; # low
+(print (atom? (car (cdr l)))) ;; #t, it's "low"
+(define l (list "swing" (list "low" "sweet") "cherry oat"))
+(print (car (cdr l))) ;; # (low sweet)
+(print (atom? (car (cdr l)))) ;; #f, it's a list
+
+(header "Eq? page 11-13")
+(print (eq? "Harry" "Harry")) ;; #t
+(define a1 "Harry")
+(define a2 "Harry")
+(print (eq? a1 a2 )) ;; #t
+(print (eq? a1 a1 )) ;; #t
+(print (eq? "margarine" "butter")) ;; #f
+
+(define l1 '())
+(define l2 '(strawberry))
+(print (eq? l1 l2)) ;; #f in practice. Per book "no answer", eq requires non-numeric atoms
+(print (eq? '() '())) ;; #t in practice
+(define n1 6)
+(define n2 7)
+(print (eq? n1 n2)) ;; #f in practice. "no answer, must be non-numeric atoms"
+(print (eq? n1 n1)) ;; #t in practice. "no answer, must be non-numeric atoms"
+
+(print (eq? (car '(Mary had a little lamb chop)) "Mary")) ;; #t
+(print (eq? 0 "0")) ;; No answer, but #f
+
+(define l '(beans beans we need jelly beans))
+(print (eq? (car l) (car (cdr l)))) ;; #t, both are 'beans'
+
+
+(header "It's PB&J time")
