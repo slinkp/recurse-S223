@@ -2,6 +2,7 @@
 !#
 
 ;; Scheme function missing from Guile that is given in the prologue
+;; and again on page 10
 (define atom?
   (lambda (x)
     (and (not (pair? x)) (not (null? x)))))
@@ -131,3 +132,15 @@
 (define l (list '(b) "c" "d"))
 (print (cons s (car l))) ;; (a b)
 (print (cons s (cdr l))) ;; (a c d)
+
+(header "Null, p. 9-10")
+
+(print (null? '())) ;; #t
+(print (null? (quote ()))) ;; #t
+
+(print "Non-empty lists aren't null")
+(print (null? '(a b c))) ;; #f
+(print "Atoms aren't null")
+(print (null? "a")) ;; #f.  "No answer", but in practice, `null?` is false for everything but empty list
+(print (null? "")) ;; #f
+(print (null? 2)) ;; #f
