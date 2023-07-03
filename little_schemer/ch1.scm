@@ -168,9 +168,13 @@
 (print (eq? "Harry" "Harry")) ;; #t
 (define a1 "Harry")
 (define a2 "Harry")
+(print "equal strings are equal, these next three are true")
 (print (eq? a1 a2 )) ;; #t
 (print (eq? a1 a1 )) ;; #t
+(print (eq? "Harry" "Harry")) ;; #t
 (print (eq? "margarine" "butter")) ;; #f
+(print "Strings are different than quoted symbols, watch out")
+(print (eq? "harry" 'harry)) ;; #f
 
 (define l1 '())
 (define l2 '(strawberry))
@@ -181,7 +185,7 @@
 (print (eq? n1 n2)) ;; #f in practice. "no answer, must be non-numeric atoms"
 (print (eq? n1 n1)) ;; #t in practice. "no answer, must be non-numeric atoms"
 
-(print (eq? (car '(Mary had a little lamb chop)) "Mary")) ;; #t
+(print (eq? (car '(Mary had a little lamb chop)) 'Mary)) ;; #t
 (print (eq? 0 "0")) ;; No answer, but #f
 
 (define l '(beans beans we need jelly beans))

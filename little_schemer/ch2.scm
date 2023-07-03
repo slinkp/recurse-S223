@@ -53,3 +53,21 @@
 (define l (list "bacon" '(and eggs)))
 (print "Pages 19-21. Now trying a non-lat")
 (print (lat? l)) ;; #f
+
+(header "member? more recursion, pp 22-28")
+(define member?
+  (lambda (a lat)
+    (cond
+     ((null? lat) #f)
+     (else (or (eq? (car lat) a)
+               (member? a (cdr lat)))))))
+
+(define lat (list "coffee" "tea" "milk"))
+
+(print (eq? "coffee" (car lat))) ; # t
+(print (member? "coffee" lat)) ;; #t
+(print (member? "tea" lat)) ;; #t
+(print (member? "milk" lat)) ;; #f
+(print (member? "nope" lat)) ;; #f
+(print (member? "tea" '())) ;; #f
+
