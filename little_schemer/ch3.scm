@@ -34,8 +34,8 @@
      ((eq? a (car lat))
       (cdr lat))
      (else
-      (rember a (cdr lat)))))) ;; # TODO: Add car lat to (rember (cdr lat))
-
+      ;; # Wrong: This just gives us whatever's to the right of the first occurrence of `a`
+      (rember a (cdr lat))))))
 
 (define a 'mint)
 (define lat '(lamb chops mint jelly))
@@ -49,4 +49,29 @@
 
 (print (rember 'cup '(coffee cup tea cup hick cup))) ;; want (coffee tea cup hick cup), get (tea cup hick cup)
 
-(header "Left off on p 35 walking through it")
+(header "2nd commandment, pp 37-42: Use Cons to build lists")
+(print "Here is an improved `rember?`, wrote it based on knowing what cons does")
+(print "it's the same as the 'simpler' version they show on p 41")
+
+(define rember
+  (lambda (a lat)
+    (cond
+     ((null? lat) lat) ;; equivalent to ((null? lat) '())
+     ((eq? a (car lat))
+      (cdr lat))
+     (else
+      (cons (car lat)
+            (rember a (cdr lat))))))) ;; This adds (car lat) to the front of (rember a (cdr lat))
+
+(define a 'mint)
+(define lat '(lamb chops mint jelly))
+(print (rember a lat)) ;; (lamb chops jelly)
+
+(define lat '(lamb chops mint flavored mint jelly))
+(print (rember a lat)) ;; (lamb chops flavored mint jelly)
+
+(print (rember 'toast '(bacon lettuce tomato))) ;; (bacon lettuce tomato)
+
+(print (rember 'cup '(coffee cup tea cup hick cup))) ;; (coffee tea cup hick cup)
+
+(print (rember 'sauce '(soy sauce tomato sauce))) ;; (soy tomato sauce)
