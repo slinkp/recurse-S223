@@ -67,7 +67,14 @@
 (print (eq? "coffee" (car lat))) ; # t
 (print (member? "coffee" lat)) ;; #t
 (print (member? "tea" lat)) ;; #t
+(print "examples of not found")
 (print (member? "milk" lat)) ;; #f
 (print (member? "nope" lat)) ;; #f
 (print (member? "tea" '())) ;; #f
 
+(print "pp 28-30. Another example walking through recursion where the atom isn't found")
+(define lat '(bagels n lox))
+(print (member? 'meat lat)) ;; #f
+(print (member? 'meat '(n lox))) ;; #f
+(print (member? 'meat '(lox))) ;; #f
+(print (member? 'meat '())) ;; #f
