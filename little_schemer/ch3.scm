@@ -75,3 +75,34 @@
 (print (rember 'cup '(coffee cup tea cup hick cup))) ;; (coffee tea cup hick cup)
 
 (print (rember 'sauce '(soy sauce tomato sauce))) ;; (soy tomato sauce)
+
+(header "`firsts` example p 43-47")
+(define firsts
+  (lambda (lol)
+    (cond
+     ((null? lol) '())
+     (else
+      (cons (car (car lol))
+            (firsts (cdr lol)))))))
+
+(define lol (list
+             '(apple peach pumpkin)
+             '(plum pear cherry)
+             '(grape raisin pea)
+             '(bean carrot eggplant)))
+
+(print (firsts lol)) ;; (apple plum grape bean)
+(print (firsts
+        (list '(a b)
+              '(c d)
+              '(e f)))) ;; (a c e)
+(print (firsts '())) ;; ()
+
+(define lol
+  (list
+   (list '(five plums) 'four)
+   '(eleven green oranges)
+   (list '(no) 'more)))
+(print (firsts lol)) ;; ((five plums) eleven (no))
+
+(header "Third commandment (p 45): Cons the first typical element onto the natural recursion")
