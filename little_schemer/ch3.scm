@@ -208,3 +208,19 @@
       (cons (car lat) (multirember a (cdr lat)))))))
 
 (print (multirember 'cup '(coffee cup tea cup and_ hick cup))) ;; (coffee tea and_ hick)
+
+(header "multiinsertR, p 56")
+
+;; this was actually my first attempt at insertR
+
+(define multiinsertR
+  (lambda (new old lat)
+    (cond
+     ((null? lat) '())
+     ((eq? old (car lat))
+      (cons old
+            (cons new (multiinsertR new old (cdr lat)))))
+     (else
+      (cons (car lat)
+            (multiinsertR new old (cdr lat)))))))
+(print (multiinsertR 'e 'd '(a b c d f g d h))) ;; (a b c d e f g d e h)
