@@ -1,3 +1,10 @@
+# 7/5 people who might be resources re functional programming:
+
+Raunak Singh
+Rhea Jara
+Aditya
+Erika
+
 # 7/5 Running list of functional programming music / sound resources
 
 [The Haskell School of
