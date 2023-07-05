@@ -106,3 +106,42 @@
 (print (firsts lol)) ;; ((five plums) eleven (no))
 
 (header "Third commandment (p 45): Cons the first typical element onto the natural recursion")
+
+(header "insertR pp 47-50: Inserting an element to right of _first occurrence_ of another element in a list")
+
+;; OMG, I got this (almost) right on the first try.
+(define insertR
+  (lambda (new old lat)
+    (cond
+     ((null? lat) '())
+     ((eq? old (car lat))
+      (cons (car lat)
+            (cons new (insertR new old (cdr lat)))))
+     (else
+      (cons (car lat)
+            (insertR new old (cdr lat)))))))
+
+(define new 'topping)
+(define old 'fudge)
+(define lat '(ice cream with fudge for dessert))
+
+(print (insertR new old lat)) ;; (ice cream with fudge topping for dessert)
+
+(define lat '(tacos tamales and_ salsa))
+(print (insertR 'jalapeno 'and_ lat)) ;; (tacos tamales and_ jalapeno salsa)
+
+;; ... whoops, i'm inserting it after every occurrence.
+;; Oh... easy fix, just don't recur when it's found:
+
+(define insertR
+  (lambda (new old lat)
+    (cond
+     ((null? lat) '())
+     ((eq? old (car lat))
+      (cons (car lat)
+            (cons new (cdr lat))))
+     (else
+      (cons (car lat)
+            (insertR new old (cdr lat)))))))
+
+(print (insertR 'e 'd '(a b c d f g d h))) ;; (a b c d e f g d h)
