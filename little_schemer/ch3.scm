@@ -193,3 +193,18 @@
 ;; (vanilla ice cream with chocolate topping)
 (print (subst2 'vanilla 'chocolate 'banana '(orange ice cream with chocolate topping)))
 ;; (orange ice cream with vanilla topping)
+
+(header "multirember on pp 53-56")
+(print "Gives the lat with all occurrences removed")
+
+;; Yay got this right on the first try
+(define multirember
+  (lambda (a lat)
+    (cond
+     ((null? lat) '())
+     ((eq? a (car lat))
+      (multirember a (cdr lat)))
+     (else
+      (cons (car lat) (multirember a (cdr lat)))))))
+
+(print (multirember 'cup '(coffee cup tea cup and_ hick cup))) ;; (coffee tea and_ hick)
