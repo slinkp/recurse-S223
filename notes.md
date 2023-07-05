@@ -1,3 +1,33 @@
+# 7/5 More hacking on broken blog infrastucture
+
+I was able to get a working-ish stripped down config with slightly older
+dependencies on the `experimental-pelican-420-2`, with page paths the way I want.
+Big changes from what's on main as of `c02a4ba6b8ff25148df6f9cd288a02bea82d08d3`:
+
+- Some older dependency versions pinned in `requirements.txt`.  Mainly pelican 4.2.0, and
+  other versions experimentally arrived at until warnings/errors went away.
+- `rm -rf content/pages/photo_album` as it causes a ton of noise in output and I don't care about that old junk at this time.
+- Disabled `i18n_subsites` plugin, don't need it without the bootstrap theme
+- Re-enabled `page_hierarchy` plugin
+- Restore the `PATH_METADATA` setting, needed to put pages in `output/` instead of `output/pages`
+
+Having done all that, I then found that the same config basically works on pelican
+4.8.0 too. So it's not a problem with package versions after all!
+Currently have those changes on the `hacking_no_photo_album_on_main` branch.
+
+TODO in rough order:
+
+- Clean up that branch and merge back to main.
+- Fix some remaining warnings, looks i have some path problems.
+- Re-enable my `pelican-redirect` plugin hack.
+- Re-enable the tag cloud plugin.
+- Audit pelicanconf.py for remaining things I disabled while fixing, and try to restore them all.
+- Find a theme I like better than default that still works on pelican 4.8.0.
+- Push updates
+- Start blogging again??
+- Get `content/pages/photo_album` working again? Probably nobody cares including me...
+
+
 # 7/5 people who might be resources re functional programming:
 
 Raunak Singh
