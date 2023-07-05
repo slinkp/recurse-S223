@@ -224,3 +224,39 @@
       (cons (car lat)
             (multiinsertR new old (cdr lat)))))))
 (print (multiinsertR 'e 'd '(a b c d f g d h))) ;; (a b c d e f g d e h)
+
+(print "fixing the book version of multiinsertL...")
+(define multiinsertL
+  (lambda (new old lat)
+    (cond
+     ((null? lat) '())
+     (else
+      (cond
+       ((eq? (car lat) old)
+        (cons new
+              (cons old
+                    ;; (multiinsertL new old lat)))) ;; THIS was the broken line - infinite recursion
+                    (multiinsertL new old (cdr lat)))))
+       (else (cons (car lat)
+                   (multiinsertL new old (cdr lat)))))))))
+
+(print (multiinsertL 'c 'd '(a b d e f d g))) ;; (a b c d e f c d g)
+
+(header "4th commandment (preliminary): Always change at least 1 arg when recurring.")
+(print "It must be changed to be closer to termination.")
+(print "The changing arg must be tested in the termination condition.")
+(print "When using cdr, test termination with `null?`")
+
+(define multisubst
+  (lambda (new old lat)
+    (cond
+     ((null? lat) '())
+     ((eq? old (car lat))
+      (cons new (multisubst new old (cdr lat))))
+     (else
+      (cons (car lat)
+            (multisubst new old (cdr lat)))))))
+
+(print "multisubst example")
+(print (multisubst '8 'a '(a great big cat took a flying leap on a car)))
+;; (8 great big cat took 8 flying leap on 8 car
