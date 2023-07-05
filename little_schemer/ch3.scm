@@ -160,3 +160,16 @@
             (insertL new old (cdr lat)))))))
 
 (print (insertL 'c 'd '(a b d e f d g))) ;; (a b c d e f d g)
+
+(header "subst on p 51")
+(define subst
+  (lambda (new old lat)
+    (cond
+     ((null? lat) '())
+     ((eq? old (car lat))
+      (cons new (cdr lat)))
+     (else
+      (cons (car lat)
+            (subst new old (cdr lat)))))))
+
+(print (subst 'X 'x '(a b c x y z x y z))) ;; (a b c X y z x y z)
