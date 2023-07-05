@@ -173,3 +173,23 @@
             (subst new old (cdr lat)))))))
 
 (print (subst 'X 'x '(a b c x y z x y z))) ;; (a b c X y z x y z)
+
+(header "subst2 on p 52")
+(print "replaces either the first occurrence of o1 or o2 by new in lat")
+
+(define subst2
+  (lambda (new o1 o2 lat)
+    (cond
+     ((null? lat) '())
+     ((eq? o1 (car lat))
+      (cons new (cdr lat)))
+     ((eq? o2 (car lat))
+      (cons new (cdr lat)))
+     (else
+      (cons (car lat)
+            (subst2 new o1 o2 (cdr lat)))))))
+
+(print (subst2 'vanilla 'chocolate 'banana '(banana ice cream with chocolate topping)))
+;; (vanilla ice cream with chocolate topping)
+(print (subst2 'vanilla 'chocolate 'banana '(orange ice cream with chocolate topping)))
+;; (orange ice cream with vanilla topping)
