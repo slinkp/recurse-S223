@@ -145,3 +145,18 @@
             (insertR new old (cdr lat)))))))
 
 (print (insertR 'e 'd '(a b c d f g d h))) ;; (a b c d e f g d h)
+
+(header "insertL on page 51")
+
+(define insertL
+  (lambda (new old lat)
+    (cond
+     ((null? lat) '())
+     ((eq? old (car lat))
+      (cons new (cons old (cdr lat))))
+      ;; Equivalent and simpler on p 51: (cons new lat) since old is already there
+     (else
+      (cons (car lat)
+            (insertL new old (cdr lat)))))))
+
+(print (insertL 'c 'd '(a b d e f d g))) ;; (a b c d e f d g)
