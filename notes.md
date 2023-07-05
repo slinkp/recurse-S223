@@ -7,6 +7,8 @@ Erika
 
 # 7/5 Running list of functional programming music / sound resources
 
+## TODO idea: one or more "hello world" in each of those
+
 [The Haskell School of
 Music](https://www.cs.yale.edu/homes/hudak/Papers/HSoM.pdf)
 
@@ -17,6 +19,8 @@ Music](https://www.cs.yale.edu/homes/hudak/Papers/HSoM.pdf)
 > program in Haskell. The core musical ideas are collected into a Haskell li-
 > brary called Euterpea.
 
+- courtesy Andrew Joseph Turley
+
 [Elementary Audio](https://www.elementary.audio/)
 
 > Elementary is a JavaScript framework and high performance audio engine...
@@ -24,12 +28,15 @@ Music](https://www.cs.yale.edu/homes/hudak/Papers/HSoM.pdf)
 > dominated by imperative, object oriented code. That means faster development,
 > simpler code, and unimpaired creativity.
 
+- courtesy Machiste Quintana
+
 [Faust](https://faust.grame.fr/)
 
 > Faust (Functional Audio Stream) is a functional programming language for
 > sound synthesis and audio processing with a strong focus on the design of
 > synthesizers, musical instruments, audio effects, etc.
 
+- courtesy Machiste Quintana
 
 [CLM](https://ccrma.stanford.edu/software/snd/snd/clm.html)
 
@@ -42,6 +49,8 @@ Music](https://www.cs.yale.edu/homes/hudak/Papers/HSoM.pdf)
 > computer instruments. These are then called in a note list or through some
 > user interface (provided by Snd, for example).
 
+- courtesy of myself
+
 [Extempore](https://extemporelang.github.io/)
 
 >  Extempore is a programming language and runtime environment designed to
@@ -51,6 +60,8 @@ Music](https://www.cs.yale.edu/homes/hudak/Papers/HSoM.pdf)
 > with code—and it's certainly very good at that, but Extempore's ambitions are
 > broader :) 
 
+- courtesy Vijith Assar
+
 [Overtone](https://overtone.github.io/)
 
 > Overtone is an open source audio environment designed to explore new musical
@@ -59,7 +70,18 @@ Music](https://www.cs.yale.edu/homes/hudak/Papers/HSoM.pdf)
 > with Clojure, a state of-the-art lisp, to create an intoxicating interactive
 > sonic experience.
 
-TODO: one or more "hello world" in each
+- courtesy Vijith Assar
+
+[tidal cycles](https://tidalcycles.org/)
+
+sounds similar to Overtone?
+
+> Tidal Cycles (or 'Tidal' for short) is a free/open source live coding
+> environment for algorithmic patterns, written in Haskell. Tidal is using
+> SuperCollider, another open-source software, for synthesis and I/O.
+
+- courtesy Andrew Joseph Turley
+
 
 
 
