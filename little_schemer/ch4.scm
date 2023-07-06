@@ -218,3 +218,24 @@
  (tup+ (list 3 7 8 1) (list 4 6))
  "Pairwise addition of unequal length tuples"
  )
+
+(header "Recursive > implementation, page 71")
+
+;; I got this working on first try :)
+;; This is similar to version on p 73.
+(define gt  ;; Could do > but don't want to override builtin
+  (lambda (n m)
+    (cond
+     ;; The book deliberately made a broken version on page 72 where next lines are swapped
+     ((zero? n) #f)  ;; Assuming non-negative numbers
+     ((zero? m) #t)  ;; Only get here if n > 0
+     (else
+      (gt (sub1 n) (sub1 m))))))
+
+(expects_eq #f (gt 12 133) "Simple > implementation")
+
+(expects_eq #t (gt 120 11) "Simple > implementation")
+
+(expects_eq #f (gt 5 5) "Not > when equal")
+
+(expects_eq #f (gt 0 0) "Not > when equal")
