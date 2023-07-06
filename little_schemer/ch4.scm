@@ -327,3 +327,26 @@
 (print "... built recursively on top of addition...")
 (print "... recursively on top of increment and decrement...")
 (print "... that's a lot of decrements")
+
+(header "Naming the mystery function, p 74")
+
+;; Holy crap it's integer division
+;; It literally counts how many times can you subtract m from n
+(define divide
+  (lambda (n m)
+    (cond
+     ((lt n m) 0) ;; Weird termination
+     (else
+      (add1 (divide (o- n m) m))))))
+
+(expects_eq 1 (divide 3 3) "omg division")
+
+(expects_eq 6 (divide 6 1) "omg division")
+(expects_eq 3 (divide 6 2) "omg division")
+(expects_eq 2 (divide 6 3) "omg division")
+(expects_eq 1 (divide 6 4) "omg division")
+(expects_eq 1 (divide 6 5) "omg division")
+(expects_eq 1 (divide 6 6) "omg division")
+(expects_eq 0 (divide 6 7) "omg division")
+
+(expects_eq 3 (divide 15 4) "yay")
