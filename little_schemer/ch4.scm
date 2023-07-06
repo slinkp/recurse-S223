@@ -267,3 +267,40 @@
 (expects_eq #f (lt 0 0) "False for zero")
 (expects_eq #f (lt 3 3) "False when equal")
 (expects_eq #f (lt 33 3) "False when bigger")
+
+
+(header "Recursive equality from page 74")
+
+;; Worked on first try.
+(define ==
+  (lambda (n m)
+    (cond
+     ((and (zero? m) (zero? n)) #t)
+     ((zero? m) #f)
+     ((zero? n) #f)
+     (else
+      (== (sub1 n) (sub1 m))))))
+
+;; Simpler, book version from p 74
+(define ==
+  (lambda (n m)
+    (cond
+     ((zero? m) (zero? n))
+     ((zero? n) #f)
+     (else
+      (== (sub1 n) (sub1 m))))))
+
+;; Rewritten using gt and lt
+(define ==
+  (lambda (n m)
+    (cond
+     ((lt n m) #f)
+     ((gt n m) #f)
+     (else #t)))) ;; Recursion not needed here, already done it
+
+(expects_eq #t (== 0 0) "zero == zero")
+(expects_eq #f (== 5 0) "non-equal")
+(expects_eq #f (== 0 3) "non-equal")
+(expects_eq #t (== 5 5) "nonzero equal")
+(expects_eq #f (== 5 7) "non-equal")
+(expects_eq #f (== 7 5) "non-equal")
