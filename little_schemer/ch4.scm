@@ -30,14 +30,14 @@
   (lambda (a b note)
     (cond
      ((equal? a b) ;; WARNING, don't use `eq?` it tests identity, like python `is`.
-      (display "As expected: ")
+      (display "OK: ")
       (display note)
       (newline)
       (display a)
       (newline)
       (newline))
      (else
-      (display "Failed to match expectation: ")
+      (display "FAILED to match expectation: ")
       (display note)
       (newline)
       (display "Expected: ")
@@ -152,3 +152,11 @@
 (expects_eq 0 (x 5 0) "mult by zero equals zero")
 (expects_eq 5 (x 5 1) "mult by one equals x")
 (expects_eq 15 (x 5 3) "multiplication works")
+(expects_eq 36 (x 12 3) "mult works, example from page 66")
+
+(header "The Fifth Commandment, p 67")
+(print "When building a value with `+`, always use 0 for the value of the terminating line")
+(print "because adding 0 does not change the value of an addition.")
+(print "When building a value with `x`, always use 1 for the value of the terminating line")
+(print "because multiplying by 1 does not change the value of a multiplication.")
+(print "When building a value with `cons`, always consider `()` for the value of the terminating line.")
