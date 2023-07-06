@@ -350,3 +350,90 @@
 (expects_eq 0 (divide 6 7) "omg division")
 
 (expects_eq 3 (divide 15 4) "yay")
+
+(header "Length of a list is easy, just increment with recursive cdr. p 76")
+
+(define len
+  (lambda (lat)
+    (cond
+     ((null? lat) 0)
+     (else
+      (add1 (len (cdr lat)))))))
+
+(expects_eq 6 (len '(hotdogs with mustard sauerkraut and_ pickles)) "Counting elements of list")
+
+(expects_eq 5 (len '(ham and_ cheese on rye)) "yep still works")
+(expects_eq 0 (len '()) "null list")
+
+(header "pick nth element from list, 1-indexed. p 76")
+
+;; This was a bit tricky and fiddly due to 1-indexing
+(define pick
+  (lambda (n lat)
+    (cond
+     ((null? lat) '()) ;; This is weird way of representing not found but ok
+     ((lt n 1) '()) ;; Also weird way of terminating
+     ((== n 1) (car lat))
+     (else
+      (pick (sub1 n) (cdr lat))))))
+
+;; here's book version.
+;; Similar but they just assume n > 0
+;; and they don't allow null list.
+(define pick
+  (lambda (n lat)
+    (cond
+     ((zero? (sub1 n)) (car lat))
+     (else
+      (pick (sub1 n) (cdr lat))))))
+
+(expects_eq
+ 'macaroni
+ (pick 4 '(lasagna spaghetti ravioli macaroni meatball))
+ "pick 4th element from list")
+
+(header "remove nth element, 1-indexed. p 76")
+
+(define rempick
+  (lambda (n lat)
+    (cond
+     ((null? lat) '()) ;; Forgot this, needed if n passed 0
+     ;; Book version also forgot to check for null!
+     ((zero? (sub1 n)) (cdr lat))
+     (else
+      (cons
+       (car lat)
+       (rempick (sub1 n) (cdr lat)))))))
+
+(expects_eq
+ '(hotdogs with mustard)
+ (rempick 3 '(hotdogs with hot mustard))
+ "Can remove nth element with rempick")
+
+(expects_eq
+ '(hotdogs with hot mustard)
+ (rempick 0 '(hotdogs with hot mustard))
+ "0 means remove nothing")
+
+(header "What are numbers?")
+
+(expects_eq #f (number? "tomato") "strings aren't numbers")
+(expects_eq #f (number? 'tomato) "symbols aren't numbers")
+(expects_eq #t (number? '123) "... unless they're numeric symbols")
+(expects_eq #t (number? 76) "numbers are numbers")
+(print "Can't define number? it's built-in primitive function")
+
+(header "No-nums (p 77) removes all numbers from a lat.")
+
+(define no-nums
+  (lambda (lat)
+    (cond
+     ((null? lat) '())
+     ((number? (car lat)) (no-nums (cdr lat)))
+     (else
+      (cons (car lat) (no-nums (cdr lat)))))))
+
+(expects_eq
+ '(pears prunes dates)
+ (no-nums '(5 pears 6 prunes 9 dates))
+ "Yep no-nums works")
