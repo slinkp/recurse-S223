@@ -304,3 +304,26 @@
 (expects_eq #t (== 5 5) "nonzero equal")
 (expects_eq #f (== 5 7) "non-equal")
 (expects_eq #f (== 7 5) "non-equal")
+
+(header "Recursive exponents yay")
+
+;; Got this right on first try, though i had to check expected value of (^ 0 0)
+(define ^
+  (lambda (n m)
+    (cond
+     ((zero? m) 1) ;; termination
+     (else
+      (x n (^ n (sub1 m))))))) ;; natural recursion
+
+(expects_eq 1 (^ 1 1) "1 to the 1th is 1")
+(expects_eq 1 (^ 1 1000) "1 to the anything is 1")
+(expects_eq 1 (^ 1 0) "1 to the 0th is 1")
+(expects_eq 1 (^ 0 0) "0 to the 0th is ... also 1")
+(expects_eq 0 (^ 0 2) "0 to the 2 is 0")
+(expects_eq 2 (^ 2 1) "2 to 1 is 2")
+(expects_eq 65536 (^ 2 16) "2 to 16th is 65536 .. slowly")
+
+(print "\nPause for a moment to consider we built exponents recursively on multiplication...")
+(print "... built recursively on top of addition...")
+(print "... recursively on top of increment and decrement...")
+(print "... that's a lot of decrements")
