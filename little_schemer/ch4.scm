@@ -95,6 +95,13 @@
      ((zero? n) m)
      (else (add1 (o+ (sub1 n) m))))))
 
+(print "Very wild quote from page 63:")
+(print "[A positive integer] is either zero")
+(print "or it is one added to a rest, where rest is again [an integer]\n")
+
+(print "p 63: (zero? n) is the termination condition on a number")
+(print "p 63: (sub1 n) is the naturation recursion on a number")
+
 (expects_eq 58 (o+ 46 12) "o+ homegrown addition via recursive increment/decrement")
 
 (define o-
@@ -108,3 +115,27 @@
 (expects_eq 8 (o- 17 9) "o- homegrown subtraction")
 
 (expects_eq -7 (o- 18 25) "subtracting n > m works too")
+
+(header "Summing a list. Homegrown `addtup` function. pp 62-")
+(print "A 'tuple' here is any list of only numbers.")
+
+;; Got this right on the first try!
+(define addtup
+  (lambda (tup)
+    (cond
+     ((null? tup) 0) ;; Termination condition. If there are no numbers, the sum is zero
+     (else
+      (o+ (car tup)
+          (addtup (cdr tup))))))) ;; Natural recursion.
+
+(expects_eq 0 (addtup '()) "Sum of empty list is 0")
+
+(expects_eq 10 (addtup (list 10)) "Sum of list (x) is x")
+
+(expects_eq 18 (addtup (list 3 5 2 8)) "sum of list")
+(expects_eq 43 (addtup (list 15 6 7 12 3)) "sum of list")
+
+(header "The First Commandment, revised.  (p 64)")
+(print "When recurring on a list of atoms ask two questions: `(null? lat)` and `else`")
+(print "When recurring on a nmber, ask two questions: `(zero? n)` and `else`")
+
