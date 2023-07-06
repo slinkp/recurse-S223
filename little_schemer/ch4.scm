@@ -423,7 +423,7 @@
 (expects_eq #t (number? 76) "numbers are numbers")
 (print "Can't define number? it's built-in primitive function")
 
-(header "No-nums (p 77) removes all numbers from a lat.")
+(header "No-nums (p 77) removes all numbers from a lat; all-nums extracts only numbers.")
 
 (define no-nums
   (lambda (lat)
@@ -437,3 +437,90 @@
  '(pears prunes dates)
  (no-nums '(5 pears 6 prunes 9 dates))
  "Yep no-nums works")
+
+
+(define all-nums
+  (lambda (lat)
+    (cond
+     ((null? lat) '())
+     ((number? (car lat))
+      (cons (car lat) (all-nums (cdr lat))))
+     (else
+      (all-nums (cdr lat))))))
+
+(expects_eq
+ '(5 6 9)
+ (all-nums '(5 pears 6 prunes 9 dates))
+ "Yep all-nums works")
+
+(header "eqan? is true if a1 and a2 are same atom")
+
+(define eqan?
+  (lambda (a1 a2)
+    (cond
+     ((and (number? a1) (number? a2))
+      (== a1 a2))
+     ((or (number? a1) (number? a2)) #f)
+     (else
+      (eq? a1 a2)))))
+
+(expects_eq #t (eqan? 11 11) "eqan? works for numbers")
+(expects_eq #f (eqan? 11 33) "eqan? works for numbers")
+(expects_eq #t (eqan? 'hello 'hello) "eqan? works for symbols")
+(expects_eq #f (eqan? 'hello 'goodbye) "eqan? works for symbols")
+(expects_eq #t (eqan? "hello" "hello") "eqan? works for strings")
+(expects_eq #f (eqan? "hello" "goodbye") "eqan? works for strings")
+(expects_eq #f (eqan? "hello" 'hello) "eqan? works for mixed cases")
+
+(header "occur? counts number of times atom appears in list. p 78")
+
+;; We've done thigns like this before
+(define occur
+  (lambda (a lat)
+    (cond
+     ((null? lat) 0)
+     ((eqan? a (car lat))
+      (add1 (occur a (cdr lat))))
+     (else (occur a (cdr lat))))))
+
+(expects_eq 0 (occur 'foo '(bar bat)) "none")
+(expects_eq 0 (occur 'foo '()) "none")
+(expects_eq 4 (occur 'foo '(foo bar bat foo baz foo foo)) "yep")
+
+(header "one? is true if n is 1 and false otherwise, p 79")
+
+;; there are various versions in book but i like this one
+(define one?
+  (lambda (n)
+    (cond
+     ((number? n) (zero? (sub1 n)))
+     (else #f))))
+
+(expects_eq #t (one? 1) "one? works")
+(expects_eq #f (one? 0) "one? works")
+(expects_eq #f (one? 100) "one? works")
+(expects_eq #f (one? "1") "one? works")
+(expects_eq #f (one? '()) "one? works")
+
+(header "Rewriting rempick to use one?, p 79")
+
+(define rempick
+  (lambda (n lat)
+    (cond
+     ((null? lat) '()) ;; Forgot this, needed if n passed 0
+     ;; Book version also forgot to check for null!
+     ((one? n) (cdr lat))
+     (else
+      (cons
+       (car lat)
+       (rempick (sub1 n) (cdr lat)))))))
+
+(expects_eq
+ '(hotdogs with mustard)
+ (rempick 3 '(hotdogs with hot mustard))
+ "Can remove nth element with rempick")
+
+(expects_eq
+ '(hotdogs with hot mustard)
+ (rempick 0 '(hotdogs with hot mustard))
+ "0 means remove nothing")
