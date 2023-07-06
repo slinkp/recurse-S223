@@ -24,6 +24,36 @@
     (newline)
     ))
 
+;; 12/6 revisiting this chapter - instead of expected output as comments, let's write an assertion function!
+
+(define expects_eq
+  (lambda (a b note)
+    (cond
+     ((equal? a b) ;; WARNING, don't use `eq?` it tests identity, like python `is`.
+      (display "As expected: ")
+      (display note)
+      (newline)
+      (display a)
+      (newline)
+      (newline))
+     (else
+      (display "Failed to match expectation: ")
+      (display note)
+      (newline)
+      (display "Expected: ")
+      (display a)
+      (newline)
+      (display "Got: ")
+      (display b)
+      (newline)
+      (newline)))))
+
+;; (expects_eq "a" "a" "a equals a")
+;; (expects_eq "a" "b" "a equals b")
+;; (expects_eq '(a b c) '(a b c) "matching lats")
+;; (expects_eq '(a b c) '() "mismatching lats")
+
+
 (header "Chapter 3. Cons the magnificent")
 
 (header "Here's a broken version equivalent to the one on page 34, so the examples come out wrong")
@@ -39,15 +69,32 @@
 
 (define a 'mint)
 (define lat '(lamb chops mint jelly))
-(print (rember a lat)) ;; want (lamb chops jelly), get (jelly)
+
+;; (print (rember a lat))
+(expects_eq
+ '(lamb chops jelly)
+ (rember a lat)
+ "Broken rember removes everything to the left of `a`")
 
 (define lat '(lamb chops mint flavored mint jelly))
-(print (rember a lat)) ;; want (lamb chops flavored mint jelly), get (flavored mint jelly)
+;; (print (rember a lat)) ;; want (lamb chops flavored mint jelly), get (flavored mint jelly)
+(expects_eq
+ '(flavored mint jelly)
+ (rember a lat)
+  "Broken rember removes everything to the left of `a`")
 
+;; (print (rember 'toast '(bacon lettuce tomato))) ;; want (bacon lettuce tomato), get ()
+(expects_eq
+ '(bacon lettuce tomato)
+ (rember 'toast '(bacon lettuce tomato))
+  "Broken rember removes everything to the left of `a`, so if a isn't found, result is empty")
 
-(print (rember 'toast '(bacon lettuce tomato))) ;; want (bacon lettuce tomato), get ()
-
-(print (rember 'cup '(coffee cup tea cup hick cup))) ;; want (coffee tea cup hick cup), get (tea cup hick cup)
+;; (print (rember 'cup '(coffee cup tea cup hick cup))) ;; want (coffee tea cup hick cup), get (tea cup hick cup)
+(expects_eq
+ '(coffee tea cup hick cup)
+ (rember 'cup '(coffee cup tea cup hick cup))
+ "Broken rember"
+ )
 
 (header "2nd commandment, pp 37-42: Use Cons to build lists")
 (print "Here is an improved `rember?`, wrote it based on knowing what cons does")
@@ -65,16 +112,36 @@
 
 (define a 'mint)
 (define lat '(lamb chops mint jelly))
-(print (rember a lat)) ;; (lamb chops jelly)
+(expects_eq
+ '(lamb chops jelly)
+ (rember a lat)
+ "")
+
 
 (define lat '(lamb chops mint flavored mint jelly))
-(print (rember a lat)) ;; (lamb chops flavored mint jelly)
+(expects_eq
+ '(lamb chops flavored mint jelly)
+ (rember a lat)
+ "")
 
-(print (rember 'toast '(bacon lettuce tomato))) ;; (bacon lettuce tomato)
 
-(print (rember 'cup '(coffee cup tea cup hick cup))) ;; (coffee tea cup hick cup)
+(expects_eq
+ '(bacon lettuce tomato)
+ (rember 'toast '(bacon lettuce tomato))
+ "")
 
-(print (rember 'sauce '(soy sauce tomato sauce))) ;; (soy tomato sauce)
+
+(expects_eq
+ '(coffee tea cup hick cup)
+ (rember 'cup '(coffee cup tea cup hick cup))
+ "")
+
+
+(expects_eq
+ '(soy tomato sauce)
+ (rember 'sauce '(soy sauce tomato sauce))
+ "")
+
 
 (header "`firsts` example p 43-47")
 (define firsts
@@ -91,19 +158,35 @@
              '(grape raisin pea)
              '(bean carrot eggplant)))
 
-(print (firsts lol)) ;; (apple plum grape bean)
-(print (firsts
-        (list '(a b)
-              '(c d)
-              '(e f)))) ;; (a c e)
-(print (firsts '())) ;; ()
+(expects_eq
+ '(apple plum grape bean)
+ (firsts lol)
+ "")
+
+
+(expects_eq
+ '(a c e)
+ (firsts (list '(a b) '(c d) '(e f)))
+ "(firsts (list of lists)) works as expected")
+
+
+(expects_eq
+ '()
+ (firsts '())
+ "firsts of empty list is empty list")
+
 
 (define lol
   (list
    (list '(five plums) 'four)
    '(eleven green oranges)
    (list '(no) 'more)))
-(print (firsts lol)) ;; ((five plums) eleven (no))
+
+(expects_eq
+ (list '(five plums) 'eleven '(no))
+ (firsts lol)
+ "works with nested lists")
+
 
 (header "Third commandment (p 45): Cons the first typical element onto the natural recursion")
 
@@ -125,10 +208,19 @@
 (define old 'fudge)
 (define lat '(ice cream with fudge for dessert))
 
-(print (insertR new old lat)) ;; (ice cream with fudge topping for dessert)
+(expects_eq
+ '(ice cream with fudge topping for dessert)
+ (insertR new old lat)
+ "insertR basic example")
+
 
 (define lat '(tacos tamales and_ salsa))
-(print (insertR 'jalapeno 'and_ lat)) ;; (tacos tamales and_ jalapeno salsa)
+
+(expects_eq
+ '(tacos tamales and_ jalapeno salsa)
+ (insertR 'jalapeno 'and_ lat)
+ "insertR basic examples")
+
 
 ;; ... whoops, i'm inserting it after every occurrence.
 ;; Oh... easy fix, just don't recur when it's found:
@@ -144,7 +236,11 @@
       (cons (car lat)
             (insertR new old (cdr lat)))))))
 
-(print (insertR 'e 'd '(a b c d f g d h))) ;; (a b c d e f g d h)
+(expects_eq
+ '(a b c d e f g d h)
+ (insertR 'e 'd '(a b c d f g d h))
+ "example with multiple occurrences of `old`, should only insert once")
+
 
 (header "insertL on page 51")
 
@@ -159,7 +255,11 @@
       (cons (car lat)
             (insertL new old (cdr lat)))))))
 
-(print (insertL 'c 'd '(a b d e f d g))) ;; (a b c d e f d g)
+(expects_eq
+ '(a b c d e f d g)
+ (insertL 'c 'd '(a b d e f d g))
+ "")
+
 
 (header "subst on p 51")
 (define subst
@@ -172,7 +272,11 @@
       (cons (car lat)
             (subst new old (cdr lat)))))))
 
-(print (subst 'X 'x '(a b c x y z x y z))) ;; (a b c X y z x y z)
+(expects_eq
+ '(a b c X y z x y z)
+ (subst 'X 'x '(a b c x y z x y z))
+ "basic subst example, only replaces once")
+
 
 (header "subst2 on p 52")
 (print "replaces either the first occurrence of o1 or o2 by new in lat")
@@ -189,10 +293,17 @@
       (cons (car lat)
             (subst2 new o1 o2 (cdr lat)))))))
 
-(print (subst2 'vanilla 'chocolate 'banana '(banana ice cream with chocolate topping)))
-;; (vanilla ice cream with chocolate topping)
-(print (subst2 'vanilla 'chocolate 'banana '(orange ice cream with chocolate topping)))
-;; (orange ice cream with vanilla topping)
+(expects_eq
+ '(vanilla ice cream with chocolate topping)
+ (subst2 'vanilla 'chocolate 'banana '(banana ice cream with chocolate topping))
+ "subst2 replaces either of 2 things")
+
+
+(expects_eq
+ '(orange ice cream with vanilla topping)
+ (subst2 'vanilla 'chocolate 'banana '(orange ice cream with chocolate topping))
+ "subst2 again")
+
 
 (header "multirember on pp 53-56")
 (print "Gives the lat with all occurrences removed")
@@ -207,7 +318,11 @@
      (else
       (cons (car lat) (multirember a (cdr lat)))))))
 
-(print (multirember 'cup '(coffee cup tea cup and_ hick cup))) ;; (coffee tea and_ hick)
+(expects_eq
+ '(coffee tea and_ hick)
+ (multirember 'cup '(coffee cup tea cup and_ hick cup))
+ "remove all occurences from lat")
+
 
 (header "multiinsertR, p 56")
 
@@ -223,7 +338,12 @@
      (else
       (cons (car lat)
             (multiinsertR new old (cdr lat)))))))
-(print (multiinsertR 'e 'd '(a b c d f g d h))) ;; (a b c d e f g d e h)
+
+(expects_eq
+ '(a b c d e f g d e h)
+ (multiinsertR 'e 'd '(a b c d f g d h))
+ "multiinsertR works")
+
 
 (print "fixing the book version of multiinsertL...")
 (define multiinsertL
@@ -240,7 +360,11 @@
        (else (cons (car lat)
                    (multiinsertL new old (cdr lat)))))))))
 
-(print (multiinsertL 'c 'd '(a b d e f d g))) ;; (a b c d e f c d g)
+(expects_eq
+ '(a b c d e f c d g)
+ (multiinsertL 'c 'd '(a b d e f d g))
+ "multiinsertL works")
+
 
 (header "4th commandment (preliminary): Always change at least 1 arg when recurring.")
 (print "It must be changed to be closer to termination.")
@@ -257,6 +381,8 @@
       (cons (car lat)
             (multisubst new old (cdr lat)))))))
 
-(print "multisubst example")
-(print (multisubst '8 'a '(a great big cat took a flying leap on a car)))
-;; (8 great big cat took 8 flying leap on 8 car
+(expects_eq
+ '(8 great big cat took 8 flying leap on 8 car)
+ (multisubst '8 'a '(a great big cat took a flying leap on a car))
+ "multisubst example a -> 8")
+ 

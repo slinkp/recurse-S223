@@ -49,6 +49,41 @@ should mention a few things:
   ```
 
 
+- Update! I just wrote a test function to automate functions return as
+  expected. Took a couple minutes and worked the first time, only needed tweaking
+  for readability. That feels good! Confirmation that I can write
+  beginner-level scheme, up to a point. Here it is:
+
+```guile
+
+(define expects_eq
+  (lambda (a b note)
+    (cond
+     ((equal? a b) ;; WARNING, don't use `eq?` it tests identity, like python `is`.
+      (display "As expected: ")
+      (display note)
+      (newline)
+      (display a)
+      (newline)
+      (newline))
+     (else
+      (display "Failed to match expectation: ")
+      (display note)
+      (newline)
+      (display "Expected: ")
+      (display a)
+      (newline)
+      (display "Got: ")
+      (display b)
+      (newline)
+      (newline)))))
+
+(expects_eq "a" "a" "a equals a")
+(expects_eq "a" "b" "a equals b")
+(expects_eq '(a b c) '(a b c) "matching lats")
+(expects_eq '(a b c) '() "mismatching lats")
+```
+
 # 7/5 More hacking on broken blog infrastucture
 
 I was able to get a working-ish stripped down config with slightly older
