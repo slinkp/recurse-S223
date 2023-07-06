@@ -239,3 +239,31 @@
 (expects_eq #f (gt 5 5) "Not > when equal")
 
 (expects_eq #f (gt 0 0) "Not > when equal")
+
+(header "Recursive < or lt implementation, pp 72-73")
+
+;; This worked on first try!
+(define lt
+  (lambda (n m)
+    (cond
+     ((and (zero? n) (zero? m)) #f)
+     ((zero? n) #t)
+     ((zero? m) #f)
+     (else
+      (lt (sub1 n) (sub1 m))))))
+
+;; Simpler book version from page 73
+(define lt
+  (lambda (n m)
+    (cond
+     ((zero? m) #f) ;; We've assumed non-negative, so n is zero or bigger, either way false!
+     ((zero? n) #t) ;; We know from above that m is not 0, so this suffices!
+     (else
+      (lt (sub1 n) (sub1 m))))))
+
+(expects_eq #t (lt 12 133) "Simple < works")
+(expects_eq #t (lt 0 1) "yep")
+
+(expects_eq #f (lt 0 0) "False for zero")
+(expects_eq #f (lt 3 3) "False when equal")
+(expects_eq #f (lt 33 3) "False when bigger")
