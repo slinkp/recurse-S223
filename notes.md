@@ -1,3 +1,54 @@
+# 7/6 more "The Little Schemer"
+
+I haven't taken much notes on this...
+should mention a few things:
+
+- I'm doing the work in the [little schemer directory in this repo](./little_schemer/)
+- I started using Guile largely because it was readily available on the mac
+- There are some syntax differences
+  - I was initially unaware of the difference between symbols and strings,
+    eg I thought `(list "foo" "bar")` was the same as `'(foo bar)`
+    but ... they are not. Symbols are their own type.
+  - In the book, a lot of example data is like `(lettuce and tomato)`
+    which I am transliterating as either `'(lettuce and_ tomato)`
+    or `(list "lettuce" "and" "tomato")` depending on mood.
+    - In guile, you can't have an unquoted list of bare strings because it
+      wants to treat the first element as a function to call, hence the need
+      for the `(list ...)` function.
+    - In guile, you can't have `'(foo and bar)` as a list of symbols, because
+      `and` is a keyword, hence why I'm doing `(foo and_ bar)`
+
+- I don't have a good way to confirm that output matches expected book output,
+  other than visual inspection. It might be handy later to have something like
+  a test assertion function. I bet I could find something like that or write one.
+  Like `(expect_eq foo bar notes)`
+  - Meanwhile I am just putting the expected output in comments.
+
+- As a crude form of literate programming, I have a couple helpers for
+  annotating the output:
+
+  ```scheme
+
+;; Easier than manual newlines
+(define print
+  (lambda (s)
+    (display s)
+    (newline)
+    ))
+
+(define header
+  (lambda (s)
+    (newline)
+    (display s)
+    (newline)
+    (display "============================================")
+    (newline)
+    (newline)
+    ))
+
+  ```
+
+
 # 7/5 More hacking on broken blog infrastucture
 
 I was able to get a working-ish stripped down config with slightly older
