@@ -190,3 +190,31 @@
  (tup+ (list 2 3) (list 4 6))
  "pairwise addition"
  )
+
+;; Here's an improved version that returns remaining elements unchanged if
+;; one tuple is shorter.
+;; I did not think of this on my own,
+;; I got stuck on "How do I build a list of zeros of the right size" :facepalm:
+
+(define tup+
+  (lambda (tup1 tup2)
+    (cond
+     ((null? tup1) tup2)
+     ((null? tup2) tup1)
+     (else
+      (cons
+       (o+ (car tup1) (car tup2)) ;; 1st element
+       (tup+ (cdr tup1) (cdr tup2)) ;; natural recursion
+       )))))
+
+(expects_eq
+ (list 7 13 8 1)
+ (tup+ (list 3 7) (list 4 6 8 1))
+ "Pairwise addition of unequal length tuples"
+ )
+
+(expects_eq
+ (list 7 13 8 1)
+ (tup+ (list 3 7 8 1) (list 4 6))
+ "Pairwise addition of unequal length tuples"
+ )
