@@ -86,7 +86,7 @@
 
 (expects_eq #f (zero? -9)  "zero? tests if a number is zero, returns bool")
 
-(header "pp 60-61. writing addition and subtraction via add1 and sub1")
+(header "pp 60-61. Addition and subtraction via recursive add1 and sub1")
 
 (define o+
   ;; Doesn't handle negative n!
@@ -139,3 +139,16 @@
 (print "When recurring on a list of atoms ask two questions: `(null? lat)` and `else`")
 (print "When recurring on a nmber, ask two questions: `(zero? n)` and `else`")
 
+(header "Multiplication as recursive addition, pp 64-65")
+
+;; This worked on the first try as well.
+(define x
+  (lambda (n m)
+    (cond
+     ((zero? m) 0)
+     (else
+      (o+ n (x n (sub1 m)))))))
+
+(expects_eq 0 (x 5 0) "mult by zero equals zero")
+(expects_eq 5 (x 5 1) "mult by one equals x")
+(expects_eq 15 (x 5 3) "multiplication works")
