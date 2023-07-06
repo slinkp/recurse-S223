@@ -160,3 +160,33 @@
 (print "When building a value with `x`, always use 1 for the value of the terminating line")
 (print "because multiplying by 1 does not change the value of a multiplication.")
 (print "When building a value with `cons`, always consider `()` for the value of the terminating line.")
+(newline)
+
+;; Mostly got this right on the first try.
+(define tup+
+  ;; Pairwise addition.
+  ;; Adds the first number of tup1 to the first of tup2,
+  ;; then the second number of tup1 to the second of tup2, etc.
+  ;; and returns the results as a tuple.
+  (lambda (tup1 tup2)
+    (cond
+     ;; Assume the tuples are equal length.
+     ;; This was my only difference from the book version on 69:
+     ;; I only checked tup1 and assumed tup2 was null too.
+     ((and (null? tup1) (null? tup2)) '())
+     (else
+      (cons
+       (o+ (car tup1) (car tup2)) ;; first element
+       (tup+ (cdr tup1) (cdr tup2)) ;; natural recursion
+       )))))
+
+(expects_eq
+ (list 11 11 11 11 11)
+ (tup+ (list 3 6 9 11 4) (list 8 5 2 0 7))
+ "pairwise addition")
+
+(expects_eq
+ (list 6 9)
+ (tup+ (list 2 3) (list 4 6))
+ "pairwise addition"
+ )
