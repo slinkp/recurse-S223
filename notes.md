@@ -1,3 +1,85 @@
+# 7/7 AMA with Ezzeri about job search
+
+Notes from the meeting:
+https://docs.google.com/document/d/1FPMl2IIxn_Gx_7kw9tgoTWWEcQJ9d3KZD8R5iK5rgWg/edit
+
+This has good info in the "informational interviews" section about finding more leads:
+https://haseebq.com/how-to-break-into-tech-job-hunting-and-interviews/#:~:text=informational%20interview.-,Informational%20Interviewing,-Here%E2%80%99s%20what%20you
+
+
+# 7/7 Ideas of things to do meetings / interest groups / talks about
+
+- Weird old software: Zope 2
+
+- Weird old software: Csound et al
+
+- Things I wish I'd known earlier about working at startups
+  - equity
+    - options are a high risk high reward long shot
+    - options cost money
+      - taxes add to that
+  - Founders are chasing the money by necessity
+    - chaos results
+  - Founders can walk away with nothing even if the company "succeeds"
+  - Acquisitions
+  - Growing pains: communication
+    - Flat doesn't scale
+    - Project dependencies
+  - Layoffs are never personal
+    - Nobody can ever promise you there won't be layoffs
+
+
+# 7/7 more stuff to read...
+
+I forget who sent me this:
+https://www.evalapply.org/posts/what-makes-functional-programming-systems-functional/
+
+# 7/7 Game dev group
+
+Irvin Hwang: Unity is pretty easy
+Alex Chen made a game in haskell!
+zarak: Godot is a good alternative to unity based on hacker news discussion?
+Lightweight, runs everywhere.
+Nolen: Godot's type system is "crappy", first-class functions are broken prior
+to Godot 4, but Godot 4 "can't export to web"
+
+https://gameprogrammingpatterns.com/
+"To start understanding how to structure game code"
+
+Something that struck me about feedback on Alex's demo:
+"Need more affordances"
+- ie feedback (visual, audio, shaking effects etc)
+to show the user when they've successfully done something
+(or not)
+
+recommended book:
+https://www.amazon.com/Visual-Thinking-Kaufmann-Interactive-Technologies/dp/0123708966
+
+# 7/6 SICP meeting
+
+Interesting perspective on the SICP book/ course:
+It's aimed at first-year MIT students where they don't necessarily have
+programming background but they ALL have heavy math background.
+
+Zach R: "You can pick and choose the exercises"
+- he skipped some problems - eg calculus, derivatives
+
+They worked through some set problems... eg testing for membership,
+removing duplicates, set intersection.
+Much of this was VERY familiar from Little Schemer and I think I could have
+solved some or all of them recursively.
+
+Unfamiliar part: Interesting pattern of defining an inner function that's recursive,
+and passing it an empty list in which to accumulate the result,
+so that the outer function doesn't have to have empty list as an argument.
+
+
+# 7/6 paired with Erika
+
+This turned into Erika trying to teach me what algebraic data types are.
+Abstractly kind of makes sense but head is a bit spinning trying to think of
+real examples... going to read an article she sent me.
+
 # 7/6 more "The Little Schemer"
 
 I haven't taken much notes on this...
