@@ -13,6 +13,8 @@ https://haseebq.com/how-to-break-into-tech-job-hunting-and-interviews/#:~:text=i
 
 - Weird old software: Csound et al
 
+- Things I learned the hard way doing tech talks?
+
 - Things I wish I'd known earlier about working at startups
   - equity
     - options are a high risk high reward long shot
@@ -185,15 +187,15 @@ Currently have those changes on the `hacking_no_photo_album_on_main` branch.
 
 TODO in rough order:
 
-- Clean up that branch and merge back to main.
-- Fix some remaining warnings, looks i have some path problems.
-- Re-enable my `pelican-redirect` plugin hack.
-- Re-enable the tag cloud plugin.
-- Audit pelicanconf.py for remaining things I disabled while fixing, and try to restore them all.
-- Find a theme I like better than default that still works on pelican 4.8.0.
-- Push updates
-- Start blogging again??
-- Get `content/pages/photo_album` working again? Probably nobody cares including me...
+- [x] Clean up that branch and merge back to main.
+- [x] Fix some remaining warnings, looks i have some path problems.
+- [ ] Re-enable my `pelican-redirect` plugin hack... doesn't seem to be finding anything
+- [x] Re-enable the tag cloud plugin.
+- [ ] Audit pelicanconf.py for remaining things I disabled while fixing, and try to restore them all.
+- [x] Find a theme I like better than default that still works on pelican 4.8.0.
+- [x] Push updates
+- [ ] Start blogging again??
+- [ ] Get `content/pages/photo_album` working again? Probably nobody cares including me...
 
 
 # 7/5 people who might be resources re functional programming:
