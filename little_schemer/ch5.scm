@@ -100,15 +100,7 @@
 ;; Heh, the first time I tried this, I got:
 ;; ((chuck chuck (chuck)) chuck ((chuck (chuck) chuck roast)) (((chuck roast))) (chuck (chuck) ((chuck chuck roast))) chuck chuck roast chuck)
 
-(expects_eq
- (list (list 'how 'much '(wood))
-       'could
-       (list (list 'a '(wood) 'chuck 'roast))
-       (list (list '(chuck roast)))
-       (list 'if '(a) (list '(wood chuck roast)))
-       'could 'chuck 'roast 'wood)
- (insertR*
-  'roast 'chuck
+(define woodchucks
   (list
    (list 'how 'much '(wood))
    'could
@@ -116,6 +108,15 @@
    (list (list '(chuck)))
    (list 'if '(a) (list '(wood chuck)))
    'could 'chuck 'wood))
+
+(expects_eq
+ (list (list 'how 'much '(wood))
+       'could
+       (list (list 'a '(wood) 'chuck 'roast))
+       (list (list '(chuck roast)))
+       (list 'if '(a) (list '(wood chuck roast)))
+       'could 'chuck 'roast 'wood)
+ (insertR* 'roast 'chuck woodchucks)
  "It recurses into sub-lists"
  )
 
@@ -211,3 +212,55 @@
  "subst*: Recursive replacing atoms in a tree, p 85"
  )
 
+(define insertL*
+  (lambda (new old l)
+    (cond
+     ((null? l) '())
+     ((atom? (car l))
+      (cond
+       ((eq? old (car l))
+        ;; Trap: It might look like you can equivalently do (cons new (insertL* new old l))
+        ;; because (cons old (cdr l)) is the same as `l`.
+        ;; But no - it's crucial to not recursively call insertL* on a list that included `car l` again
+        ;; or you'll just prepend forever.
+        (cons new (cons old (insertL* new old (cdr l)))))
+       (else
+        (cons (car l) (insertL* new old (cdr l))))))
+     (else
+      (cons (insertL* new old (car l))
+            (insertL* new old (cdr l)))))))
+
+(expects_eq
+  (list
+   (list 'how 'much '(wood))
+   'could
+   (list (list 'a '(wood) 'pecker 'chuck))
+   (list (list '(pecker chuck)))
+   (list 'if '(a) (list '(wood pecker chuck)))
+   'could 'pecker 'chuck 'wood)
+
+  (insertL* 'pecker 'chuck woodchucks)
+  "Recursive insertL too"
+  )
+
+(header "recursive member* for finding atom anywhere in list, p 86-87")
+
+(define member*
+  (lambda (a l)
+    (cond
+     ((null? l) #f)
+     ((atom? (car l))
+      (cond
+       ((eq? a (car l)) #t)
+       (else
+        (member* a (cdr l)))))
+     (else
+      (or
+       (member* a (car l))
+       (member* a (cdr l)))))))
+
+(expects_eq
+ #t
+ (member* 'chips (list '(potato) (list 'chips (list '(with) 'fish) '(chips))))
+ "recursive membership works"
+ )
