@@ -56,3 +56,27 @@
 
 (header "Chapter 5. It's full of stars")
 
+(define rember*
+  (lambda (a l)
+    (cond
+     ((null? l) '())
+     ((atom? (car l))
+      (cond
+       ((eq? a (car l)) (rember* a (cdr l)))
+       (else
+        (cons (car l) (rember* a (cdr l))))))
+     (else
+      (cons (rember* a (car l))
+            (rember* a (cdr l)))))))
+
+(expects_eq
+ (list '(coffee) (list '(tea)) (list 'and '(hick)))
+ (rember* 'cup (list '(coffee) 'cup (list '(tea) 'cup) (list 'and '(hick)) 'cup))
+ "It recurses into sub-lists"
+ )
+
+(expects_eq
+ (list (list '(tomato)) (list '(bean)) (list 'and (list '(flying))))
+ (rember* 'sauce (list (list '(tomato sauce)) (list '(bean) 'sauce) (list 'and (list '(flying)) 'sauce)))
+ "It recurses into sub-lists"
+ )

@@ -1,3 +1,20 @@
+# 7/10 Little Schemer continued
+
+
+
+# 7/8 I basically fixed my blog
+
+There's more to do as per the 7/6 TODO list, but at least I can update it
+again. Good weekend accomplishment!
+Switched to the `gum` theme and [submitted a patch to it](https://github.com/getpelican/pelican-themes/pull/752)
+
+# 7/7 presentations
+
+I presented on recursive math in Scheme, showed examples
+as per [walkthrough.scm](./little_schemer/walkthrough.scm)
+Not a very smooth talk but hopefully it was fun and maybe enlightening to at
+least one person?
+
 # 7/7 AMA with Ezzeri about job search
 
 Notes from the meeting:
@@ -194,6 +211,7 @@ TODO in rough order:
 - [ ] Audit pelicanconf.py for remaining things I disabled while fixing, and try to restore them all.
 - [x] Find a theme I like better than default that still works on pelican 4.8.0.
 - [x] Push updates
+- [ ] Fix auto-linking URLs in markdown
 - [ ] Start blogging again??
 - [ ] Get `content/pages/photo_album` working again? Probably nobody cares including me...
 
