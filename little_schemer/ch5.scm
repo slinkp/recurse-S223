@@ -80,3 +80,42 @@
  (rember* 'sauce (list (list '(tomato sauce)) (list '(bean) 'sauce) (list 'and (list '(flying)) 'sauce)))
  "It recurses into sub-lists"
  )
+
+
+(print "page 82. Recursive insertion to right")
+(define insertR*
+  (lambda (new old l)
+    (cond
+     ((null? l) '())
+     ((atom? (car l))
+      (cond
+       ((eq? old (car l))
+        (cons old (cons new (insertR* new old (cdr l)))))
+       (else
+        (cons (car l) (insertR* new old (cdr l))))))
+     (else
+      (cons (insertR* new old (car l))
+            (insertR* new old (cdr l)))))))
+
+;; Heh, the first time I tried this, I got:
+;; ((chuck chuck (chuck)) chuck ((chuck (chuck) chuck roast)) (((chuck roast))) (chuck (chuck) ((chuck chuck roast))) chuck chuck roast chuck)
+
+(expects_eq
+ (list (list 'how 'much '(wood))
+       'could
+       (list (list 'a '(wood) 'chuck 'roast))
+       (list (list '(chuck roast)))
+       (list 'if '(a) (list '(wood chuck roast)))
+       'could 'chuck 'roast 'wood)
+ (insertR*
+  'roast 'chuck
+  (list
+   (list 'how 'much '(wood))
+   'could
+   (list (list 'a '(wood) 'chuck))
+   (list (list '(chuck)))
+   (list 'if '(a) (list '(wood chuck)))
+   'could 'chuck 'wood))
+ "It recurses into sub-lists"
+ )
+
