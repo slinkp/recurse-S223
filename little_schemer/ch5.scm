@@ -119,3 +119,95 @@
  "It recurses into sub-lists"
  )
 
+(header "The First Commandment, final version.  (p 83)")
+(print "When recurring on a list of atoms `lat`, ask two questions: `(null? lat)` and `else`")
+(print "When recurring on a number `n`, ask two questions: `(zero? n)` and `else`")
+(print "When recurring on a list of S-expressions `l`, ask 3 questions:")
+(print "(null? l), (atom? (car l)), and `else`.")
+
+(newline)
+(print "All lists are either: empty, an atom consed onto a list, or a list consed onto a list.")
+
+(header "The Fourth Comandment, final version. (p 84)")
+(print "Always change at least one argument while recurring.")
+(print "When recurring on a list of atoms `lat`, use `(cdr lat)`.")
+(print "When recurring on a number `n`, use `(sub1 n)`.")
+(print "When recurring on a list of S-expressions `l`,")
+(print "use `(car l)` and `(cdr l)` if neither `(null? l)` nor `(atom? (car l))` are true.\n")
+(print "It must be changed to be closer to termination.")
+(print "The changing arg must be tested in the termination condition:\n")
+(print "When using cdr, test termination with `null?`")
+(print "and when using sub1, test termination with `zero?`")
+
+
+(header "occur* pp 84-85")
+
+(define occur*
+  (lambda (a l)
+    (cond
+     ((null? l) 0)
+     ((atom? (car l))
+      (cond
+       ((eq? (car l) a)
+        (+ 1 (occur* a (cdr l))))
+       (else
+        (occur* a (cdr l)))))
+     (else
+      (+ (occur* a (car l))
+         (occur* a (cdr l)))))))
+
+
+(define l
+  (list
+   '(banana)
+   (list 'split
+         (list (list (list '(banana ice)))
+               (list 'cream '(banana))
+               'sherbet))
+   '(banana)
+   '(bread)
+   '(banana brandy)))
+
+(expects_eq
+ 5
+ (occur* 'banana l)
+ "Recursive descent and counting matches"
+ )
+
+
+(define subst*
+  (lambda (new old l)
+    (cond
+     ((null? l) '())
+     ((atom? (car l))
+      (cond
+       ((eq? old (car l))
+        (cons new (subst* new old (cdr l))))
+       (else
+        (cons (car l) (subst* new old (cdr l))))))
+     (else
+      (cons (subst* new old (car l))
+            (subst* new old (cdr l)))))))
+
+(define l
+  (list '(banana)
+        (list 'split (list (list (list '(banana ice)))
+                           (list 'cream '(banana))
+                           'sherbet))
+        '(banana)
+        '(bread)
+        '(banana brandy)))
+
+(expects_eq
+ (list '(orange)
+       (list 'split (list (list (list '(orange ice)))
+                          (list 'cream '(orange))
+                          'sherbet))
+       '(orange)
+       '(bread)
+       '(orange brandy))
+
+ (subst* 'orange 'banana l)
+ "subst*: Recursive replacing atoms in a tree, p 85"
+ )
+
