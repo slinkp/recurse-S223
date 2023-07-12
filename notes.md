@@ -1,5 +1,145 @@
+# 7/12 running at the scary thing
+
+As per the previous entry, I posted yesterday on zulip asking recursers for help
+picking a game engine. Godot sounds like a good fit.
+
+Am considering trying to write the _entire thing_ of "breakout pong," in
+language(s) I've never used before (either Godot script or C#), for
+"Impossible Things Thursday", which fortuitously is _tomorrow_.
+
+That gives me the rest of today to work through a bit of Godot intro tutorials.
+
+Eep.
+
+
+More idea for a bouncing realtime sequencer thing:
+
+- Each wall is a note trigger for a different sound (sampler or synth)
+  - balls aren't triggers of their own sounds maybe
+- Your only controls are:
+  - _resizing_ or _dragging_ the window to affect bounces
+  - _adding_ or _removing_ balls
+    - speed can only be set when adding?
+
+Later enhancement:
+ - control to toggle _stickiness_ for a wall.
+   When a wall is sticky, balls adhere to it and the sample/voice sustains or
+   loops. When a sticky wall is set un-sticky, balls are immediately released
+   with their old direction/velocity
+
+# 7/11 Reset!
+
+I had an epiphany that while it's fun to write little scheme functions and get
+them working on (usually) the first try, that's a strong indicator that this
+project of working through [The Little Schemer](https://mitpress.mit.edu/9780262560993/the-little-schemer/) is **too easy**.
+Also, I could theoretically do this book any time.
+
+It's true that I haven't made the time during the past 14 years of being a
+working parent, but _that doesn't make it a good Recurse goal_.
+I won't be happy if I leave here and my big accomplishment is finishing this
+little book.
+
+It really helped having an office hours meeting with Liz talking through all this. Thanks Liz.
+
+So, I'm dropping the book. I'm not sorry I tried that - it was much fun and
+helped me build confidence about FP and working the recursive thinking muscles.
+
+Instead, I really want to have a go at my current biggest idea:
+
+* Game-like user interface
+* ... Which has as its goal producing/creating sounds/music.
+* So it's a sort of virtual musical instrument,
+  ... that doesn't look anything like an instrument
+  ... and is more about exploring the effects of your actions than about
+  precise control. I like chaotic exploratory music :)
+* Side goal: Write this in a functional language or functional style, if possible.
+
+So why haven't I started?
+
+Partly because there's a lot of [yak
+shaving](http://www.catb.org/jargon/html/Y/yak-shaving.html) involved, and I am afraid of my
+apparently unbounded ability to get distracted by fuzzy yaks.
+
+Also, as long as I haven't started, I haven't failed!
+
+I think the thing to do is to take a run at getting a minimal prototype working as fast as possible, and iterate.
+
+What would that look like?
+
+- Pick a game / UI framework. Any.  (Yak shaving!)
+  - Bonus points if it's functional
+- Build the simplest UI I can think of (two ideas below).
+- Pick a sound / synthesis engine that can be triggered/controlled from the game framework. (More yak shaving!)
+  - Bonus points if it's functional.
+  - Some possibilities to follow up on in a previous entry
+- Wire up the UI to the engine.
+- Iterate.
+
+Simple idea 1: Breakout Percussion
+
+- Objects bounce around a 2D space
+- You control something that they can bounce off, eg the classic breakout/pong paddle
+- I got some inspiration from [fellow recurser Nolan's DVD game](https://itseieio.itch.io/dvdlogo)
+- Connect it to some sort of sound engine
+  - initially could use in-engine synthesis assuming the engine provides enough
+  - simplest idea: every impact triggers a musical sound
+    - each object has "a sound"
+    - parameters of that sound controlled by: relative velocity, size (mass?),
+      x/y coordinates of impact.
+      - possible parameters: pitch, volume, envelope ...
+    - So every impact makes _two_ sounds as there's two colliding bodies
+
+How to validate this idea as fast as possible:
+
+- Timebox each step.
+  Eg can I get _anything_ bouncing in X hours? Yes? Then stop there.
+  Can I get _any_ sound triggered by a collision? Yes? Then stop there.
+- Keep each step REALLY minimal.
+
+At first this wouldn't be much different to play than a really pointless
+and noisy breakout-like prototype (where nothing breaks).
+How long would it take to make it interesting? _musically_ interesting?
+
+Ideas for later iterations of pong:
+
+- More involved game physics might make for interesting interactions.
+  Eg gravity! Damage?
+
+- "Filter areas." Drag to create a shape, any events that happen within that
+  area get their sound run through a filter. Could literally be LPF, bandpass,
+  etc. But also other effects. Eg: pitch shift!
+
+- Player can add or remove bouncing objects?
+- Player can pause objects?
+- Build stationary obstacles?
+
+Simple idea 2: Mixer Space / Sound Garden
+
+- First, there are stationary objects that make continuous loops or generative
+  sounds.  (How to create these is TBD; could be hard-wired initially.)
+
+- Player controls a thing that is essentially a stereo microphone
+  - The controls could affect rotation, movement, pickup pattern of microphone(s),
+    maybe sensitivity (eg how far away can you hear something)
+
+- Volume and stereo panning of each object's sound in the output is determined by
+  your proximity and orientation to it
+
+Ideas for later iterations of mixer space:
+
+- Ways to interact with the stationary objects to change their parameters?
+  - Move them
+  - Make them bigger/smaller (louder/softer)
+  - Add filters, change their loops
+
+- 3D :D
+
+
 # 7/10 Little Schemer continued
 
+I got into the `*` functions in chapter 5, basically all about recursive
+descent into nested lists. This builds on the previous work, not too
+challenging so far.
 
 
 # 7/8 I basically fixed my blog
@@ -300,7 +440,12 @@ sounds similar to Overtone?
 
 - courtesy Andrew Joseph Turley
 
+[Pure lang](https://agraef.github.io/pure-lang/)
 
+> Pure is a modern-style functional programming language based on term rewriting. ...
+> It also integrates nicely with a number of other computing environments, most notably Faust, Pure Data, Octave, Reduce and TeXmacs.
+
+- courtesy Sonke Hahn
 
 
 # 6/29 pelican hacking
