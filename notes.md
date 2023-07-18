@@ -1,3 +1,176 @@
+# 7/18 Godot here we go
+
+Today's plan: after last week's "impossible things really were impossible" Thursday,
+and learning enough of godot to think I might actually be able to build one of
+these things, I am going to try to:
+
+1. Stand up a game from scratch. No player inputs at all yet.
+2. Randomly at start add one bouncing ball with random start position, direction, and velocity.
+   (TODO: no-gravity bounce physics; may need another look at the getting
+   started bounce)
+   - Obvious implication: I need walls.
+3. Trigger a sound on bounce.
+   TODO: What parameters does godot allow controlling and how far can I get
+   with what they provide?
+   You can apparently do arbitrary pitch scale (presumably via trivial
+   resampling), which is promising.
+   For example, the [piano keys demo](https://github.com/godotengine/godot-demo-projects/blob/master/audio/midi_piano/piano_keys/piano_key.gd)
+
+The immediate goal is to get a handle on structuring a minimal game from scratch - what
+scenes do I need? And then discover how much mileage I can get out of godot's
+built-in audio. And then, if it's too limited for my later goals, figure out
+what my options are for alternate sound engines.
+
+
+# 7/18 Blogging travails
+
+I had hoped to hook into the Recurse internal blog feed, but have not been able
+to resolve 503 errors with adding my feed to blaggregator.
+I validated the feed and fixed a warning about multiple entries with same
+timestamps, which seems to have been a red herring.
+I think I am going to have to drop this side quest. I can of course just write
+posts and manually drop them in zulip.
+
+# 7/17 Godot progress
+
+I finished the "Step by step" walkthrough and nearly finished the "First 2D Game"
+tutorial.
+
+I have a feeling I'm going to need to remember this to avoid much "why did my
+things move" pain:
+
+> Before we add any children to the Player node, we want to make sure we don't
+> accidentally move or resize them by clicking on them. Select the node and
+> click the icon to the right of the lock. Its tooltip says "Make selected
+> node's children not selectable."
+
+
+I plowed through most of the steps without too many blunders.
+One thing that briefly tripped me up was they didn't remind me to connect any of the
+timers' `timeout` signals to the Main node. I had a suspicion about this, and
+confirmed it by adding logging to the signal handlers - none of them were
+triggering. Also looking at the [example source
+code](https://github.com/godotengine/godot-demo-projects/blob/master/2d/dodge_the_creeps/Main.tscn) 
+was useful.
+
+One of the more magical-seeming things was at the very end, wiring up the Enter key to the start
+button. Not sure I understood what's happening. 
+I get that I am adding a Shortcut to the Button node in the inspector.
+But did naming the InputEventAction's action `start_game` correspond to the
+same named thing in Project Settings -> Input Map? Is that name an identifier?
+In some other parts of Godot, you can browse or autocomplete relevant identifiers
+that exist.
+
+
+# 7/14 Still trying to troubleshoot blaggretator
+
+I downloaded the repo and trying the docker-compose setup.
+`brew install docker-compose` works but hilariously does not install `docker`.
+Whoops, turns out that `brew install --cask docker`
+was needed (note the `--cask` is important per https://stackoverflow.com/questions/44084846/cannot-connect-to-the-docker-daemon-on-macos).
+
+To do that I also had to `brew remove docker-compose` and `brew remove
+docker-completion` as it got in the way.
+Should've read docs before randomly running brew commands.
+
+# 7/14 More Godot learnings
+
+I worked through more big chunks of tutorials and built some confidence that I
+can get a handle on it. Started over on the "signals" tutorial that I got into
+a broken state yesterday; this time it went swimmingly.
+Beyond that I didn't log specific progress. At this rate maybe I'll be able to
+write something from scratch Tuesday?
+
+Had to depart to airport at 4pm.
+
+# 7/13 Impossible Things day reflection
+
+Today was a very dispiriting day.
+First, a meta-reflection: It would be good to have firm time/space boundaries
+when attempting something impossible. Life outside Recurse unexpectedly derailed much of
+my day with some pretty major stressors. So it ended up being more like "impossible half-day".
+
+Second, I didn't even finish "Your First 2D game." That alone is probably a day given
+how difficult I found it to get used to the editor / environment at all.
+
+The Godot editor is very complex and to my mind very finicky and unintuitive.
+Not entirely unlike walking up to something like Photoshop for the first time
+and expecting to be productive. For example, I had a really hard time figuring
+out which node properties were per-instance and which were overrides and how to
+control the scope of the changes I was making.
+
+Some useful things I did learn...
+
+I did get to play some with bouncing objects off walls, because the
+"Creating Instances" step of the "Getting Started" tutorial includes bouncing,
+albeit with gravity which I didn't want.
+
+Two options for input controls in scripts:
+https://docs.godotengine.org/en/stable/getting_started/step_by_step/scripting_player_input.html
+
+> The built-in input callbacks, mainly `_unhandled_input()`. Like _process(),
+> it's a built-in virtual function that Godot calls every time the player
+> presses a key. It's the tool you want to use to react to events that don't
+> happen every frame, like pressing Space to jump. To learn more about input
+> callbacks, see Using InputEvent.
+>
+> The `Input` singleton. A singleton is a globally accessible object. Godot
+> provides access to several in scripts. It's the right tool to check for input
+> every frame.
+
+Playing around I figured out how to add a "reverse direction instantly" button
+to the controls of the "Listening to Player Input" example:
+
+```
+	if Input.is_action_just_pressed("ui_down"):
+		# Instant flip!
+        # `is_action_just_pressed` instead of `is_action_pressed`, 
+        # because we don't want multiple triggers if you hold down "down".
+        # Also, rotation is in radians. PI radians = half a circle aka 180 degrees.
+		rotation += PI
+```
+
+
+The "Using Signals" tutorial is either broken or I am repeatedly making basic mistakes.
+I tried twice to add the Node2D scene and a button. The first time, the button showed
+up, but rendering the game placed the face icon at top left corner (I had
+placed it at center) and I couldn't ever see the button, assumed it was
+offscreen. I tried to back up via undo, wasn't able to get it working; tried
+quitting godot and using `git revert` then restarting, but maybe I didn't fully clean
+up something; re-adding the Node2D and button in the editor looked right to me, but
+running the game now looked like where I had left off at the end of the "Listening to Player
+Input" tutorial. No button.
+
+I forgot to initialize the git repo until I was finished with "Listening to
+Player Input" and not 100% sure what state things were in when I saved, so
+perhaps the repo wasn't in a good state. Seems like I may have to start from scratch.
+
+
+# 7/13 Impossible Things day plan
+
+1. Build a 2D minimal thing in Godot
+   1a: Hello world: goal 1:30pm
+2. start 1 ball bouncing off walls
+   - fixed direction and starting automatically or randomly: goal 2pm
+   - fixed speed, direction
+   - click to pick a starting point? goal 3:30pm
+3. Audio
+   - fixed sound native in godot
+   goal: 3pm
+4. Figure out if can change pitches in godot?
+   https://www.youtube.com/watch?v=-fyhjHbFP_8
+   If not, quickly pivot to: can i somehow trigger something else? faust?
+   even if just a proof of concept beep
+   goal: 4pm
+
+
+# 7/12 Godot
+
+The intro docs are pretty friendly, but it's surpringly not very visible "how
+do I install this thing". One answer for MacOS turned out to be simply `brew
+install godot`, but I had to search the FAQ for "install" to find that.
+
+
 # 7/12 running at the scary thing
 
 As per the previous entry, I posted yesterday on zulip asking recursers for help
