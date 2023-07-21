@@ -1,4 +1,107 @@
-# 7/18 Godot here we go
+# Thurs 7/20
+
+## Today's plan
+
+Today's goal was to do more interesting things with the audio, and fix the more
+annoying problems I've had so far.
+
+## Thurs 7/20 progress
+
+### Fixes
+
+I fixed the problem of balls going offscreen.
+A comment from Nolen Royalty on Zulip led me to the project's "ticks per
+second" setting, and searching the Godot docs led to this page:
+https://docs.godotengine.org/en/stable/tutorials/physics/troubleshooting_physics_issues.html#objects-are-passing-through-each-other-at-high-speeds
+
+Raising from 60 to 240 seems to have done the trick.
+
+Also found this future tip:
+
+> Modify your fast-moving object's collision shape depending on its movement
+> speed. The faster the object moves, the larger the collision shape should
+> extend outside of the object to ensure it can collide with thin walls more
+> reliably.
+Bumping up `ticks per second` seems to fix the missing collisions. Yay!
+
+### UX
+
+I added some buttons! Can now start, restart, and add more balls.
+Ugly as heck, I cargo-culted some stuff from the RPG demo, and I don't understand how to manage the layout.
+
+### Audio
+
+I wanted each wall to make interestingly different sounds.
+Where I got to: Each wall now has its own audio bus, and I'm playing with
+different effects on each. That's a start.
+
+I also want to trigger a different sample from each wall.
+But boy does fiddling with samples take a lot of time.
+I'm trying to resist going down non-programming rabbit holes there.
+
+I spent a little while attempting to load a white noise sample to loop
+with the idea that i might have one wall trigger filtered white noise instead
+of an interesting sample. But:
+- Godot doesn't really offer enough features to build your own synth parameters,
+  eg envelope is what I really want.
+  - MAYBE you could if you had a pool of audio busses, and assigned one per
+    note.
+  - That actually might not be a bad idea... I think I saw an example like that.
+- Effects are per-bus, meaning if I control filter params at runtime they'd
+  apply to all sound from that wall, not just the latest hit.
+- I couldn't figure out how to override the looping settings in the audio file
+  itself from code. Seems like that should be possible, but it's apparently not
+  something people do at runtime much. It's intended eg for background music
+  that always loops.
+
+### Non-godot stuff
+
+I also spent some time updating my [dotfiles](https://github.com/slinkp/dotfiles)
+as there were various changes I hadn't pushed, and as always when doing that, I
+noticed something that could be better (platform detection).
+
+
+# 7/19 How'd Godot go?
+
+I didn't manage to trigger any sound yesterday, but I did today!
+
+## Yesterday's progress
+
+I managed to build a bouncing "game" with one ball (spawns at start, random
+direction and location, fixed velocity).  It's up at
+https://github.com/slinkp/godot-bounce-1
+
+Some non-obvious things:
+- Why is the ball slowing down over time even though friction is set to 0?
+- Why does the ball fly through the walls if I set speed too high (eg 2000)?
+  - The most reliable workaround I found for this was to make the walls really
+    thick offscreen. This won't work for future on-screen obstacles though.
+
+## Today's progress:
+
+- Experiments with preventing the ball-through-walls problem, no solution yet:
+  - For now I am living with it and making speed lower than I want :(
+  - Tried enabling `continuous_cd` physics for the ball, sounded relevant but
+    didn't help.
+  - Tried clamping ball position to the viewport. This seems to get the ball
+    stuck flying along the edge of the wall occasionally, which actually makes sense.
+
+- Experiments with fixing ball momentum:
+  - Setting ball damp mode to "Replace" helped. Why though?
+  - Setting wall friction to 0 didn't help, it already was by default.
+
+- Audio success:
+  - Wired up signals
+  - Dynamically loading sample in code so I can replace them later
+    - I found some code in a youtube tutorial https://www.youtube.com/watch?v=A-926oL_8NM
+      but it seems outdated: `File` is now `FileAccess` and that's not even
+      relevant, there's a much easier way to get the stream in one call via
+      `load(path)`. So you can literally just do something like
+      `$AudioStreamPlayer.set_stream(load("res://assets/foo.wav"))`
+  - I am currently doing pitch randomly in a 2-octave range.
+
+
+# Tues 7/18 Godot here we go
 
 Today's plan: after last week's "impossible things really were impossible" Thursday,
 and learning enough of godot to think I might actually be able to build one of
@@ -61,6 +164,13 @@ same named thing in Project Settings -> Input Map? Is that name an identifier?
 In some other parts of Godot, you can browse or autocomplete relevant identifiers
 that exist.
 
+# 7/14 More Godot learnings
+
+I worked through more big chunks of tutorials and built some confidence that I
+can get a handle on it. Started over on the "signals" tutorial that I got into
+a broken state yesterday; this time it went swimmingly.
+Beyond that I didn't log specific progress. At this rate maybe I'll be able to
+write something from scratch Tuesday?
 
 # 7/14 Still trying to troubleshoot blaggretator
 
@@ -73,15 +183,15 @@ To do that I also had to `brew remove docker-compose` and `brew remove
 docker-completion` as it got in the way.
 Should've read docs before randomly running brew commands.
 
-# 7/14 More Godot learnings
+That done, and more operator errors overcome, I ran into a wall, unable to get `docker-compose up` to succeed,
+looks like something misconfigured re postgres.
+Posted an [issue with blaggregator](https://github.com/recursecenter/blaggregator/issues/188)
+I successfully nerd-sniped Andrew Joseph Turley who helped me past my initial
+blunders but didn't know what was up with the db either.
 
-I worked through more big chunks of tutorials and built some confidence that I
-can get a handle on it. Started over on the "signals" tutorial that I got into
-a broken state yesterday; this time it went swimmingly.
-Beyond that I didn't log specific progress. At this rate maybe I'll be able to
-write something from scratch Tuesday?
+Short day. Had to depart to airport at 4pm.
 
-Had to depart to airport at 4pm.
+
 
 # 7/13 Impossible Things day reflection
 
