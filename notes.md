@@ -1,3 +1,471 @@
+# Tues July 25 2023
+
+## FIFOs and chuck: learned a lot, moving on
+
+Yesterday's progress:
+
+I started getting a handle on the [Chuck language](https://chuck.stanford.edu/doc/)
+and spent some time investigating whether I could make it beep via events on
+stdin.
+
+Answer: Not really. Chuck doesn't support stdin :(
+It does of course support reading lines from a file, and I have a hacky attempt
+at using a named fifo on the filesystem (via `mkfifo`).
+Which sort of works, but the process writing to it needs to keep it open; once
+you send EOF, chuck will never see any more data. Will play with this more Tuesday.
+
+Today's progress:
+
+More fiddling with FIFOs, which has taught me quite a bit about FIFOs!
+First of all, confirmed that Chuck will never see any more data from a FIFO
+after receiving EOF.
+
+I thought I had learned of a workaround which in hindsight is both clever and retroactively
+obvious: A script that wants to read a FIFO can open it in read/write mode.
+The FIFO should be kept open as long as it has *at least one* writer.
+
+But... this still didn't work. Chuck won't read any lines after EOF from the
+first write.
+I committed all this to a new repo for my chuck experiments (TODO: add link)
+
+Maybe the open-for-both-read-and-write trick is a Bash-ism as that's the context where I learned
+of it?
+It does seem to work in bash, eg:
+
+in one terminal:
+```
+mkfifo foo
+exec 3<>foo
+cat <&3
+```
+And in the other:
+```
+echo hello > foo
+echo hello again > foo
+```
+The first terminal will print both messages.
+
+
+## Next try: virtual MIDI cable?
+
+Followed this: https://feelyoursound.com/setup-midi-os-x/
+
+Chuck can see the virtual midi cable; partial output of `chuck --probe`:
+
+```
+[chuck]: ------( 3 MIDI inputs  )------
+[chuck]:     [0] : "Revelator IO 24"
+[chuck]:     [1] : "IAC Driver Bus 1"
+[chuck]:     [2] : "IAC Driver Virtual MIDI Cable"
+```
+
+### Success: a chuck script sending midi through virtual midi cable to another chuck script
+
+I successfully got both the `gomidi.ck` example (for reading)
+and the `midiout.ck` example (for writing), only had to slightly tweak the
+latter to un-hardwire midi channel 0.
+Committed scripts for this to my chuck experiments repo too. 
+Example output:
+
+```
+Pauls-MBP midi:(main)$ ./main.sh
+Here are two chuck programs sending midi to each other via virtual midi cable.
+This assumes that midi device 2 is that virtual midi cable
+Example of how to set one up on MacOS: https://feelyoursound.com/setup-midi-os-x/
+
+If it's working you should see both 'sending' and 'Received' messages printed
+
+[chuck]: cannot bind to tcp port 8888...
+MIDI device opened for reading: 2  ->  IAC Driver Virtual MIDI Cable
+MIDI device opened for writing: 2  ->  IAC Driver Virtual MIDI Cable
+sending NOTE ON message...
+Received  144 60 127
+sending NOTE OFF message...
+Received  128 60 0
+sending NOTE ON message...
+Received  144 60 127
+sending NOTE OFF message...
+Received  128 60 0
+sending NOTE ON message...
+Received  144 60 127
+```
+
+
+
+
+## Godot sending MIDI output ... Nope :(
+
+Well, somehow I missed that Godot doesn't send midi at all. Input only. Geez.
+There is an [open issue about
+it](https://github.com/godotengine/godot-proposals/issues/2321)
+but nobody has tackled it.
+Another side quest I'd like to avoid; if I were going to do this I'd do OSC instead.
+
+## Re-assessing Godot output control signal options
+
+I could either still attempt the embedding route ...
+OR attempt the middleware route, Godot makes network requests to a separate process
+which is responsible for receiving them and translating them into something a
+synth engine (eg Chuck) can understand.
+
+### Middleware protocol options
+
+Godot can send/receive either http, websocket, or webrtc. That's pretty much it.
+
+Webrtc doesn't seem very helpful in this context?
+Http works but is a fair amount of overhead.
+Websocket seems like a suitable transport layer and **bonus: i'd get to finally learn how to
+work with websockets.** More learning = more good.
+
+Something like:
+
+```
++------------+              +----------------+             +--------------+
+| gdscript   |  websocket   | middleware     |  OSC        |Synth engine  |
+| function   |------------->| reads events   |------------>| (eg chuck,   |
+| sends data |              | and translates |             | Pd, faust,   |
+| as packets |              | to ... OSC?    |             | etc          |
++------------+              +----------------+             +--------------+
+```
+
+#### Advantage:
+
+- Synth engine is more or less trivially swappable (lots of things support OSC).
+- I get to learn websocket.
+- I get to learn something about OSC.
+- I get to pick an arbitrary language for the middleware and learn that too!
+  Scheme, Haskell, something.
+
+#### Disadvantage:
+
+- Highly un-portable. I couldn't distribute a "game" built this way.
+
+## Or, embedding
+
+In this route I'd write a GDExtension that embeds Chuck.
+Or try again with Faust.
+
+#### Advantage
+
+- I'd get to learn / re-learn a little C++
+- Maybe games written this way are portable?
+
+#### Disadvantage
+
+- I'm tying to one sound engine forever
+- I think learning how to build a gdextension is less interesting
+  and less portable knowledge than learning websockets and a functional language.
+
+# Mon July 24 2023
+
+## Plan
+
+Travel day.
+TIL that United in-flight wifi is decent enough for documentation browsing at
+least... and that united economy seats are *very* tight for working on a
+laptop. Feel very scrunched, trying to take it easy and not hurt my wrists too
+much.
+
+Today's goal: See if my Godot game can make an external sound engine (any
+external sound engine) go boop.
+As a first pass, I might see if I can either wire up godot to chuck via a
+virtual midi device (which I don't yet know how to set up), or - as a possibly
+more fun hack - shove lines of text through a local pipe or socket, which Chuck seems
+like it might be able to consume and parse.
+
+If I can make a hello world beep, then I may try porting old weird csound code
+mentioned in a previous update to Chuck and see how well I like Chuck for this
+sort of thing.
+
+But in terms of "programming at the edge of my abilities", a more useful hack
+might be to make a Godot 4 extension to send OSC messages. There is an old abandoned implementation
+for Godot 3, but it's incompatible and the extension interface has changed
+completely between 4 and 5.
+Solving this would mean diving into C++ which I have never got along well with
+and haven't touched in probably 20 years. Intimidating, but also maybe empowering?
+
+OR! Here's a wacky idea: Some kind of middleware in language of my choice that
+translates .... something that Godot can already emit to OSC, and send OSC to
+chuck.
+Harder to distribute, but more fun to write? Could stretch my polyglot muscles
+by writing the middleware in some interesting new-to-me language eg haskell.
+
+## Progress
+
+I started getting a handle on the [Chuck language](https://chuck.stanford.edu/doc/)
+and spent some time investigating whether I could make it beep via events on
+stdin.
+
+Answer: Not really. Chuck doesn't support stdin :(
+It does of course support reading lines from a file, and I have a hacky attempt
+at using a named fifo on the filesystem (via `mkfifo`).
+Which sort of works, but the process writing to it needs to keep it open; once
+you send EOF, chuck will never see any more data. Will play with this more Tuesday.
+
+
+# Sun 7/23
+
+Tried to install various things I might want to play with on the plane on Monday, and hit
+some dead ends that may inform future audio programming.
+
+Now, what audio do I want to try on the plane?
+
+From [The Haskell School of
+Music](https://www.cs.yale.edu/homes/hudak/Papers/HSoM.pdf)
+i tried installing Euterpea2. 
+Sadly it seems to be abandonware. I succeeded in installing Haskell and ghcup,
+but euterpea was a dead end: the suggested `cabal v1-install` doesn't exist,
+instead suggests `cabal v2-install` which dies like so:
+
+```
+cabal: Could not resolve dependencies:
+[__0] trying: Euterpea-2.0.8 (user goal)
+[__1] next goal: bytestring (dependency of Euterpea)
+[__1] rejecting: bytestring-0.11.4.0/installed-0.11.4.0 (conflict: Euterpea =>
+bytestring>=0.10.4.0 && <=0.10.9)
+[__1] skipping: bytestring-0.12.0.0, bytestring-0.11.5.0, bytestring-0.11.4.0,
+bytestring-0.11.3.1, bytestring-0.11.3.0, bytestring-0.11.2.0,
+bytestring-0.11.1.0, bytestring-0.11.0.0, bytestring-0.10.12.1,
+bytestring-0.10.12.0, bytestring-0.10.10.1, bytestring-0.10.10.0,
+bytestring-0.10.9.0 (has the same characteristics that caused the previous
+version to fail: excluded by constraint '>=0.10.4.0 && <=0.10.9' from
+'Euterpea')
+[__1] trying: bytestring-0.10.8.2
+[__2] next goal: base (dependency of Euterpea)
+[__2] rejecting: base-4.16.4.0/installed-4.16.4.0 (conflict: bytestring =>
+base>=4.2 && <4.15)
+[__2] skipping: base-4.18.0.0, base-4.17.1.0, base-4.17.0.0, base-4.16.4.0,
+base-4.16.3.0, base-4.16.2.0, base-4.16.1.0, base-4.16.0.0, base-4.15.1.0,
+base-4.15.0.0 (has the same characteristics that caused the previous version
+to fail: excluded by constraint '>=4.2 && <4.15' from 'bytestring')
+[__2] rejecting: base-4.14.3.0, base-4.14.2.0, base-4.14.1.0, base-4.14.0.0,
+base-4.13.0.0, base-4.12.0.0, base-4.11.1.0, base-4.11.0.0, base-4.10.1.0,
+base-4.10.0.0, base-4.9.1.0, base-4.9.0.0, base-4.8.2.0, base-4.8.1.0,
+base-4.8.0.0, base-4.7.0.2, base-4.7.0.1, base-4.7.0.0, base-4.6.0.1,
+base-4.6.0.0, base-4.5.1.0, base-4.5.0.0, base-4.4.1.0, base-4.4.0.0,
+base-4.3.1.0, base-4.3.0.0, base-4.2.0.2, base-4.2.0.1, base-4.2.0.0,
+base-4.1.0.0, base-4.0.0.0, base-3.0.3.2, base-3.0.3.1 (constraint from
+non-upgradeable package requires installed instance)
+[__2] fail (backjumping, conflict set: Euterpea, base, bytestring)
+After searching the rest of the dependency tree exhaustively, these were the
+goals I've had most trouble fulfilling: base, bytestring, Euterpea
+```
+
+I don't feel like fighting that battle for unmaintained software.
+Side quest averted!
+
+Next I tried installing Faust, but the suggested `sudo make install` dies as well;
+looks like some bad scripting, my first guess is something like an env var evaluated to empty string:
+
+```
+make -C build install DESTDIR= PREFIX=/usr/local
+if test -d ../.git; then git submodule update --init; fi
+cd faustdir &&  .. -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release "-DWORKLET=off"
+/bin/sh: ..: command not found
+make[1]: *** [install] Error 127
+```
+
+Chuck: install success.
+`chuck --help` at least spits out nice output.
+I downloaded all the docs I could find into ~/Downloads/chuck_docs for offline perusal.
+
+Confirmed that the `foo.ck` from the STanford tutorial works.
+Also downloaded that tutorial.
+So, I guess Chuck it is, for my next steps at least.
+
+# Fri 7/21
+
+## Game tweaks
+
+- I added a speed control, just a text input that controls speed of new balls,
+  not existing ones.
+- Added a MarginContainer around the controls to make layout a bit nicer, and
+  figured out the basics of the GridContainer that my buttons are in.
+  (It has spacing properties for laying out its children; I didn't find them
+  at first because they're not called margins.)
+
+## Pairing with Andrew Joseph Turley
+
+Whew. I have been too anti-social this week. Partly because I am embarassed
+about lack of progress.
+
+Today I forced myself to pair (twice!) which was really good!
+
+I showed Andrew my current toy/game and we discussed a lot, such as:
+
+- Rapidly hitting the limits of the godot audio engine, and options.
+- eg you _could_ probably build something out of primitives internally,
+  but it might be difficult and not performant.
+  Would be writing simple synth primitives like envelopes and LFOs from scratch.
+  You can sort of imagine that from reading the [AudioStreamGenerator docs](https://docs.godotengine.org/en/stable/classes/class_audiostreamgenerator.html#class-audiostreamgenerator)
+  ... but if you want polyphony you might end up doing something like
+  managing a pool of buses manually, etc.
+- Instead you could consider another engine entirely, eg PD, Faust, etc etc.
+  Or one of the common game audio engines. I always figured I might end up this
+  way. And there are broadly two ways to do that. Roughly in order of difficulty:
+  - Controlling an external engine:
+    - HTTP is clunky for this purpose but simple and might do for a first proof of concept.
+      - [Godot can make HTTP
+        requests](https://docs.godotengine.org/en/stable/tutorials/networking/http_request_class.html#why-use-http)
+      - [Faust can get control values via HTTP
+        requests](https://faustdoc.grame.fr/manual/http/#changing-the-value-of-a-widget)
+        though all the examples are setting values of widgets like sliders,
+        presumably could use for note triggers as well?
+    - OSC is likely a better fit for purpose.
+      - [There is an old, likely outdated OSC client extension for
+        Godot](https://github.com/frankiezafe/gdosc)
+        - ok, that's a large yak to shave: it's a GDNative extension. Godot no longer
+          supports that; it would have to be rewritten as a GDExtension.
+      - [Faust can receive OSC
+        messages](https://faustdoc.grame.fr/qreference/7-osc/#osc-support)
+      - [PD can as well]()
+  - Embedding an engine:
+      - [PD or rather libpd can be embedded in
+        godot](https://github.com/magogware/godot-audiostreampd), this means
+        you can have godot run an existing pd patch as an embedded audio stream.
+      - It may be possible to do the same with faust?
+        Unclear. Certainly you can compile faust to C or C++ and then there may be
+        some way to write a program that bridges that to a Godot audio stream.
+        But it may mean recompiling anytime you change the Faust dsp code.
+        Initial reading suggests that [dynamically loading faust dsp source at
+        runtime is supported only in certain platforms](https://faustdoc.grame.fr/manual/embedding/):
+        > The Interpreter, LLVM IR and WebAssembly ones are particularly interesting
+        > since they allow the direct compilation of a DSP program into executable code
+        > in memory, bypassing the external compiler requirement.
+
+
+## Pairing with Cody Harris
+
+Learned a bit about cryptopals, what an "oracle" is and how he made a simple
+one, really neat example.
+We talked through my godot project. Didn't write code. But he had some good
+feedback and we talked about the pain of building user interfaces.
+
+## Random side note re a lost cool old csound instrument
+
+Long ago I translated an example from Dodge's "Computer Music" book into
+Csound. I still remember what it sounded like, but not how it worked.
+It seemed pretty simple but also strange - using random noise in a weird way
+that produced a sort of rumbly or blurry pitch.
+I liked how it sounded and the range of sounds that could
+be made by tweaking the parameters. I remember using it in my earliest
+experiments with python-generated csound scripts.
+
+I also remember that that same demo of mine used a PWM synth that I wrote and
+was proud of, and somebody else's drum that made nice kicks.
+
+Sadly this does not seem to be anywhere on my current computer, nor in dropbox,
+which is supposed to contain "everything".
+I have a pile of ancient backup drives, which hopefully still work, and this
+thing _should_ still exist on one of those.
+If I can find it, I would love to translate those instruments into something I
+can use with my project, whether Faust or Chuck or other.
+
+UPDATE: I found it! In dropbox after all, just inside an old tarball.
+The python code was called "pysco" and the files were named `song1.orc` and `song1.sco`.
+
+Excerpt of song1.orc below.
+I believe the referenced "table 1" is supposed to just contain a cycle of a sine
+wave.
+
+```
+instr 1; variably noisy pitched ring modulator
+; by PW based on C. Dodge (2nd ed.) p. 103
+
+;set up an envelope
+  idur  =       p3-p4-p5
+  iamp  =       ampdb(p6)
+  kenv  expseg  1, p4, iamp, p5, iamp, idur, 1
+
+; set up note freq & noise bandwidth
+  ipitch        =       cpspch(p8)
+  ibw   =       .01*p7*ipitch   ; p7 sets noise bandwidth as % of ipitch
+
+;feed amplitude kenv into a random # generator
+  amp   randi   kenv, ibw
+
+; random # modulates amp. of oscillator
+  aout  oscil   amp, ipitch, 1  ; use table 1
+        outs    aout, aout
+endin
+```
+
+And here were some note events for it, and the f1 table from the .sco file:
+
+```
+f1 0 65536 10 1
+
+;     start         duration       atk rel   db   bw   octave.pitch
+i 1.0 25.9459459459 0.430947295709 0.1 0.001 76.0 10.0 7.0
+i 1.0 26.2757884206 0.169059850097 0.05 . 79.0 12.0 7.02
+i 1.0 26.4448482707 0.241319036428 0.02 0.1 81.0 8.0 7.03
+i 1.0 26.5820826849 0.279766252739 0.2 0.001 83.0 7.0 6.09
+i 1.0 26.8264918855 0.35853685648 0.01 . 66.0 10.0 8.09
+i 1.0 27.0402896433 0.665231682917 0.005 . 73.0 15.0 8.1
+i 1.0 27.3315336488 1.98030139423 0.005 0.1 78.0 30.0 8.07
+i 1.0 28.0905453044 2.09066440118 1.0 1.0 90.0 80.0 5.06
+i 1.0 28.648119859 2.16791850605 1.5 2.0 37.0 60.0 11.05
+i 1.0 28.8113999428 3.14324165529 1.0 2.5 33.0 60.0 11.08
+i 1.0 29.0179832153 0.209342347636 0.3 0.001 60.0 10.0 10.09
+i 1.0 31.9546415981 0.643285721091 0.1 0.001 76.0 10.0 7.0
+i 1.0 32.4478213231 0.250728475244 0.05 . 79.0 12.0 7.02
+i 1.0 32.6985497983 0.355655111633 0.02 0.1 81.0 8.0 7.03
+i 1.0 32.9011191126 0.410436052974 0.2 0.001 83.0 7.0 6.09
+i 1.0 33.2598643885 0.521874106774 0.01 . 66.0 10.0 8.09
+i 1.0 33.5716644965 0.959238733446 0.005 . 73.0 15.0 8.1
+i 1.0 33.9935783022 2.7969876457 0.005 0.1 78.0 30.0 8.07
+i 1.0 35.0792644583 2.90735065265 1.0 1.0 90.0 80.0 5.06
+i 1.0 35.8655111633 2.98460475752 1.5 2.0 37.0 60.0 11.05
+i 1.0 36.0941261473 4.28660240734 1.0 2.5 33.0 60.0 11.08
+i 1.0 36.3823780449 0.291010972782 0.3 0.001 60.0 10.0 10.09
+i 1.0 40.3807285546 0.855624146473 0.1 0.001 76.0 10.0 7.0
+i 1.0 41.0372455299 0.332397100391 0.05 . 79.0 12.0 7.02
+i 1.0 41.3696426303 0.469991186839 0.02 0.1 81.0 8.0 7.03
+i 1.0 41.6375468447 0.541105853209 0.2 0.001 83.0 7.0 6.09
+i 1.0 42.1106281958 0.685211357068 0.01 . 66.0 10.0 8.09
+i 1.0 42.5204306539 1.25324578397 0.005 . 73.0 15.0 8.1
+i 1.0 43.0730142599 3.61367389716 0.005 0.1 78.0 30.0 8.07
+i 1.0 44.4853749166 3.72403690412 1.0 1.0 90.0 80.0 5.06
+i 1.0 45.500293772 3.80129100899 1.5 2.0 37.0 60.0 11.05
+i 1.0 45.7942436561 5.4299631594 1.0 2.5 33.0 60.0 11.08
+i 1.0 46.1641641789 0.372679597929 0.3 0.001 60.0 10.0 10.09
+i 1.0 51.2242068155 1.06796257186 0.1 0.001 76.0 10.0 7.0
+i 1.0 52.0440610411 0.414065725538 0.05 . 79.0 12.0 7.02
+i 1.0 52.4581267666 0.584327262045 0.02 0.1 81.0 8.0 7.03
+i 1.0 52.7913658812 0.671775653444 0.2 0.001 83.0 7.0 6.09
+i 1.0 53.3787833074 0.848548607362 0.01 . 66.0 10.0 8.09
+i 1.0 53.8865881157 1.5472528345 0.005 . 73.0 15.0 8.1
+i 1.0 54.5698415219 4.43036014863 0.005 0.1 78.0 30.0 8.07
+i 1.0 56.3088766793 4.54072315559 1.0 1.0 90.0 80.0 5.06
+i 1.0 57.5524676851 4.61797726046 1.5 2.0 37.0 60.0 11.05
+i 1.0 57.9117524693 6.57332391146 1.0 2.5 33.0 60.0 11.08
+i 1.0 58.3633416172 0.454348223076 0.3 0.001 60.0 10.0 10.09
+i 1.0 64.4850763807 1.28030099724 0.1 0.001 76.0 10.0 7.0
+i 1.0 65.4682678566 0.495734350684 0.05 . 79.0 12.0 7.02
+i 1.0 65.9640022073 0.69866333725 0.02 0.1 81.0 8.0 7.03
+i 1.0 66.3625762219 0.802445453679 0.2 0.001 83.0 7.0 6.09
+i 1.0 67.0643297234 1.01188585766 0.01 . 66.0 10.0 8.09
+i 1.0 67.6701368819 1.84125988503 0.005 . 73.0 15.0 8.1
+i 1.0 68.4840600883 5.2470464001 0.005 0.1 78.0 30.0 8.07
+i 1.0 70.5497697462 5.35740940706 1.0 1.0 90.0 80.0 5.06
+i 1.0 72.0220329025 5.43466351193 1.5 2.0 37.0 60.0 11.05
+i 1.0 72.4466525868 7.71668466351 1.0 2.5 33.0 60.0 11.08
+i 1.0 72.9799103598 0.536016848223 0.3 0.001 60.0 10.0 10.09
+i 1.0 80.1633372503 1.49263942262 0.1 0.001 76.0 10.0 7.0
+i 1.0 81.3098659764 0.577402975831 0.05 . 79.0 12.0 7.02
+i 1.0 81.8872689523 0.812999412456 0.02 0.1 81.0 8.0 7.03
+i 1.0 82.3511778671 0.933115253914 0.2 0.001 83.0 7.0 6.09
+i 1.0 83.1672674437 1.17522310795 0.01 . 66.0 10.0 8.09
+i 1.0 83.8710769524 2.13526693556 0.005 . 73.0 15.0 8.1
+i 1.0 84.815669959 6.06373265157 0.005 0.1 78.0 30.0 8.07
+i 1.0 87.2080541176 6.17409565853 1.0 1.0 90.0 80.0 5.06
+i 1.0 88.9089894242 6.25134976339 1.5 2.0 37.0 60.0 11.05
+i 1.0 89.3989440086 8.86004541557 1.0 2.5 33.0 60.0 11.08
+i 1.0 90.0138704068 0.61768547337 0.3 0.001 60.0 10.0 10.09
+
+```
+
+
 # Thurs 7/20
 
 ## Today's plan
@@ -22,7 +490,6 @@ Also found this future tip:
 > speed. The faster the object moves, the larger the collision shape should
 > extend outside of the object to ensure it can collide with thin walls more
 > reliably.
-Bumping up `ticks per second` seems to fix the missing collisions. Yay!
 
 ### UX
 
@@ -172,6 +639,8 @@ a broken state yesterday; this time it went swimmingly.
 Beyond that I didn't log specific progress. At this rate maybe I'll be able to
 write something from scratch Tuesday?
 
+Short day due to travel, needed to stop at 3 to get to airport.
+
 # 7/14 Still trying to troubleshoot blaggretator
 
 I downloaded the repo and trying the docker-compose setup.
@@ -310,7 +779,7 @@ Later enhancement:
    loops. When a sticky wall is set un-sticky, balls are immediately released
    with their old direction/velocity
 
-# 7/11 Reset!
+# 7/11/23 Reset!
 
 I had an epiphany that while it's fun to write little scheme functions and get
 them working on (usually) the first try, that's a strong indicator that this
@@ -425,20 +894,20 @@ descent into nested lists. This builds on the previous work, not too
 challenging so far.
 
 
-# 7/8 I basically fixed my blog
+# 7/8/23 Saturday: I basically fixed my blog
 
 There's more to do as per the 7/6 TODO list, but at least I can update it
 again. Good weekend accomplishment!
 Switched to the `gum` theme and [submitted a patch to it](https://github.com/getpelican/pelican-themes/pull/752)
 
-# 7/7 presentations
+# 7/7/23 presentations
 
 I presented on recursive math in Scheme, showed examples
 as per [walkthrough.scm](./little_schemer/walkthrough.scm)
 Not a very smooth talk but hopefully it was fun and maybe enlightening to at
 least one person?
 
-# 7/7 AMA with Ezzeri about job search
+# 7/7/23 AMA with Ezzeri about job search
 
 Notes from the meeting:
 https://docs.google.com/document/d/1FPMl2IIxn_Gx_7kw9tgoTWWEcQJ9d3KZD8R5iK5rgWg/edit
@@ -447,7 +916,7 @@ This has good info in the "informational interviews" section about finding more 
 https://haseebq.com/how-to-break-into-tech-job-hunting-and-interviews/#:~:text=informational%20interview.-,Informational%20Interviewing,-Here%E2%80%99s%20what%20you
 
 
-# 7/7 Ideas of things to do meetings / interest groups / talks about
+# 7/7/23 Ideas of things to do meetings / interest groups / talks about
 
 - Weird old software: Zope 2
 
@@ -476,7 +945,7 @@ https://haseebq.com/how-to-break-into-tech-job-hunting-and-interviews/#:~:text=i
 I forget who sent me this:
 https://www.evalapply.org/posts/what-makes-functional-programming-systems-functional/
 
-# 7/7 Game dev group
+# 7/7/23 Game dev group
 
 Irvin Hwang: Unity is pretty easy
 Alex Chen made a game in haskell!
@@ -608,7 +1077,7 @@ should mention a few things:
 (expects_eq '(a b c) '() "mismatching lats")
 ```
 
-# 7/5 More hacking on broken blog infrastucture
+# 7/5/23 More hacking on broken blog infrastucture
 
 I was able to get a working-ish stripped down config with slightly older
 dependencies on the `experimental-pelican-420-2`, with page paths the way I want.
@@ -639,14 +1108,14 @@ TODO in rough order:
 - [ ] Get `content/pages/photo_album` working again? Probably nobody cares including me...
 
 
-# 7/5 people who might be resources re functional programming:
+# 7/5/23 people who might be resources re functional programming:
 
 Raunak Singh
 Rhea Jara
 Aditya
 Erika
 
-# 7/5 Running list of functional programming music / sound resources
+# 7/5/23 Running list of functional programming music / sound resources
 
 ## TODO idea: one or more "hello world" in each of those
 
@@ -731,7 +1200,7 @@ sounds similar to Overtone?
 - courtesy Sonke Hahn
 
 
-# 6/29 pelican hacking
+# 6/29/23 pelican hacking
 
 Trying to get my Pelican-based [website](https://slinkp.com) unbroken.
 Fixed most of the errors.
@@ -748,7 +1217,7 @@ old requirements.txt? Maybe need to spin up python 2.7 somewhere? :(
 
 
 
-# 6/27 pairing on Mastermind
+# 6/27/23 pairing on Mastermind
 
 Rules:
 •There are six colors
