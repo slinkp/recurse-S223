@@ -2,7 +2,7 @@ import socket
 import struct
 import random
 
-def send_note(pitch, event="/noteon"):
+def send_note(pitch, event="/note/on"):
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     client_socket.settimeout(1.0)
     packet = osc_message(pitch, event)
@@ -11,7 +11,7 @@ def send_note(pitch, event="/noteon"):
     print("Sent %s" % packet)
 
 def send_off(pitch):
-    send_note(pitch, event="/noteoff")
+    send_note(pitch, event="/note/off")
 
 TAG_INT = "i"
 TAG_STRING = "s"

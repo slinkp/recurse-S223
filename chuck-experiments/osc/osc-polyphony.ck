@@ -34,7 +34,7 @@ class NoteEvent extends Event
 // the event
 NoteEvent on;
 // array of ugen's handling each note OFF
-Event @ us[128];
+Event @ note_offs[128];
 
 // the base patch. JCRev = Chowning style reverb
 Gain g => JCRev r => dac;
@@ -58,10 +58,12 @@ fun void handler()
         Std.mtof( note ) => m.freq;
         Math.random2f( .6, .8 ) => m.pluckPos;
         on.velocity / 128.0 => m.pluck;
-        off @=> us[note];
+        off @=> note_offs[note];
 
+        // Wait for note-off event
         off => now;
-        null @=> us[note];
+        null @=> note_offs[note];
+        <<< "Note ended, disconnecting" >>>;
         m =< g;
     }
 }
@@ -79,7 +81,7 @@ while( true )
     while( oin.recv( msg ) )
     {
         // catch only noteon
-        if ( msg.address == "/noteon" )
+        if ( msg.address == "/note/on" )
         {
             // Assume a message with 2 int args: note number 0-127 and velocity 0-127.
             // store midi note number
@@ -92,10 +94,10 @@ while( true )
             // yield without advancing time to allow shred to run
             me.yield();
         }
-        else if( msg.address == "/noteoff" )
+        else if( msg.address == "/note/off" )
         {
             <<< "handling note off", msg.getInt(0) >>>;
-            us[msg.getInt(0)].signal();
+            if( note_offs[msg.getInt(0)] != null ) note_offs[msg.getInt(0)].signal();
         }
         else
         {
