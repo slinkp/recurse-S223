@@ -1,4 +1,122 @@
+# Fri July 28, 2023
+
+## Progress: Godot sending OSC -> UDP -> Chuck ... it beeps!
+
+Continuing from yesterday: Spent a couple hours banging my head around how to
+format proper OSC messages from Chuck. At first I thought this meant using a
+`PackedByteArray`, but then I discovered no way to serialize an integer into a
+signed _bigendian_ int as required by OSC... except to use
+`StreamBufferPeer.put_32`. That class basically wraps `PackedByteArray`.
+
+It seems like more overhead, conceptually if not performance-wise, but maybe
+it's not surprising that the only place Godot exposes endianness is in what's
+intended to be low-level networking code.
+
+I had it producing messages where the bytes that I sent to the logger looked
+correct (though that took some eyeballing ascii codes as I didn't know a quick
+way to make them more readable; gdscript is not as nice as Python about things
+like that), but my Chuck script was still complaining that they were invalid
+OSC messages.
+
+Then I discovered I had left in a later call to `append(1)`
+that I temporarily added when I first minimally tested UDP :facepalm:
+
+I removed that trailing byte of garbage and now ... it beeps!
+
+I need to figure out how to record screen captures with both video and system audio.
+
+## TODO
+
+What next? I think the remaining work is to make this thing actually
+interesting/fun, as it's currently only a proof of concept.
+
+Also, it occurs to me that the polyphony demo could be more robust about voice
+starvation. Instead of depending on the client to reliably send note-off
+messages: Every time we start a note, we check if there's a note-off signal
+already registered for that pitch, and call that if not null.
+
+# Thurs July 27
+
+Ok, maybe _not_ middleware. After talking to recursers Nolan and Andrew,
+apparently it's easy to send OSC via raw UDP.
+
+Setting Haskell aside for now...
+
+## Progress:
+
+- I wrote a trivial Python osc client demo with some trial and error to get the byte
+padding right, and confirmed the Chuck osc-dump.ck demo can receive and parse
+it.
+
+- I modified the [Chuck polyphonic MIDI example]() to receive OSC, which
+involved wrapping my brain around how Chuck deals with time and signals (very
+interesting and weird), and then confirmed I get actual audio when running my
+python client in another terminal. It beeps! Iterated a bit to improve note-off handling.
+OSC doesn't have a standard way to represent notes, so as a quick hack, I'm
+just embedding MIDI integer pitch, ie 60 = middle C.
+
+I put those scripts [here](https://github.com/slinkp/recurse-S223/tree/main/chuck-experiments/osc).
+
+Then I started hacking on some GDScript to send raw UDP from Godot.
+I confirmed it sends them, but I haven't formatted valid OSC messages yet.
+
+# Weds July 26 2023
+
+Finally attended one of Andrew's "Happy Little Sine Waves" sessions and saw how
+he would build an envelope generator from scratch in Pd. 
+
+Then I got back to the Recurse hub. Hello hub!
+
+## Planning
+
+I'm pursuing the "middleware" approach described yesterday,
+and somewhat arbitrarily picked Haskell as the implementation language,
+because:
+- I'd like to learn Haskell!
+- It's functional!
+- It already has libries for both OSC and Websocket.
+
+
+0. First step: Make a plan
+  - [x] That would be this.
+
+1. Make chuck beep from haskell repl
+  - [x] Side quest: Learn haskell. Semi-joking. First I need to do a small hello world haskell tutorial
+  - [ ] install haskell OSC library
+  - [x] find or hack a Chuck demo that listens for OSC events
+  - [ ] write a function to send an OSC event and call it from haskell repl
+  - [ ] confirm i can make chuck beep from haskell
+
+2. Ping haskell from godot via websockets
+  - [ ] Install haskell websocket library
+  - [ ] Decide which is the client and which the server.
+    - first idea: game should be the server and audio should be a client.
+      This would eventually allow running a multiplayer game server with different clients
+      each running the sound engine locally. Each player hears something
+      different? This is more useful for the "mixer space" idea I wrote up on 7/11/23.
+    - This might be the wrong way to think about it though. Maybe the audio
+      engine always talks to the local game client (which is also Godot), not the
+      godot server.
+
+3. Profit. Or, rather, have fun making noises.
+
+4. Optional: Bypass websockets and embed the haskell stuff in godot?
+  - There are [Haskell bindings for GDNative](https://github.com/SimulaVR/godot-haskell)
+  - Unclear if that means I could use the haskell OSC sources from directly
+    inside godot?
+  - If so, then instead of using websockets at all, we could presumably have haskell
+    functions that send OSC to an audio engine, and trigger those functions
+    directly from godot signals.
+
+## Progress
+
+Well, I learned a tiny bit of Haskell tutorial, and a bit more Chuck.
+
 # Tues July 25 2023
+
+Not back at hub. Too tired, I slept poorly.
+I did manage to have a fairly useful day of discoveries, though none of it is
+tangible progress on the bouncing audio game:
 
 ## FIFOs and chuck: learned a lot, moving on
 
@@ -91,14 +209,14 @@ Received  144 60 127
 ```
 
 
-
-
 ## Godot sending MIDI output ... Nope :(
 
 Well, somehow I missed that Godot doesn't send midi at all. Input only. Geez.
+I wouldn't have done the previous experiment if I had bothered to confirm this
+first.
+
 There is an [open issue about
-it](https://github.com/godotengine/godot-proposals/issues/2321)
-but nobody has tackled it.
+it](https://github.com/godotengine/godot-proposals/issues/2321) but nobody has tackled it.
 Another side quest I'd like to avoid; if I were going to do this I'd do OSC instead.
 
 ## Re-assessing Godot output control signal options
@@ -147,14 +265,16 @@ Or try again with Faust.
 
 #### Advantage
 
-- I'd get to learn / re-learn a little C++
-- Maybe games written this way are portable?
+- I'd get to learn / re-learn a little C++, that'd be good.
+- *Maybe* games written this way are portable?
 
 #### Disadvantage
 
-- I'm tying to one sound engine forever
-- I think learning how to build a gdextension is less interesting
-  and less portable knowledge than learning websockets and a functional language.
+- I'd be tying to one sound engine forever.
+- I think learning how to build a gdextension is less
+  generally useful/portable knowledge than learning websockets and a functional
+  language, aside from the general c++ experience.
+- Sounds less fun and interesting.
 
 # Mon July 24 2023
 
