@@ -85,6 +85,7 @@ while( true )
         {
             // Assume a message with 2 int args: note number 0-127 and velocity 0-127.
             // store midi note number
+            // NOTE we could also have used OSC message type of `m` which is embedded midi event
             msg.getInt(0) => on.note;
             // store velocity
             msg.getInt(1) => on.velocity;
