@@ -2,59 +2,77 @@
 // ; by PW based on C. Dodge (2nd ed.) p. 103 - ex 26a
 
 
-// ;set up an envelope
 fun void noisemod(float idur, float att, float rel, float dbamp, float bw, float octave, float pc)
 {
     Math.fabs((idur - rel))::second => dur timeToRelease;
     <<< "Note start for dur", idur, "db", dbamp, "bw", bw >>>;
 
-    //   iamp  =       ampdb(p6)
     Std.dbtorms(dbamp + 5) => float iamp;
     <<< "iamp is:", iamp >>>;
 
-    // ; set up note freq & noise bandwidth
-    //   ipitch        =       cpspch(p8)
-    // Map the octave to midi pitch: 8 -> 60
+    // Pitch
+    // Map the octave & pitch class to midi pitch: eg [8, 0] -> 60
     (octave * 12) - 36 => float ipitch;
-    // Then offset the pitch class:
     pc + ipitch => ipitch;
     // Then convert to frequency.
     Std.mtof(ipitch) => float ifreq;
     <<< "Midi pitch", ipitch, "freq", ifreq>>>;
 
-    .01 * bw * ifreq => float ibw; // Sets noise bandwidth as % of ipitch
-
-    <<< "bandwidth for noise is", ibw >>>;
-
-    // ;feed amplitude kenv into a random # generator
-    //   amp   randi   kenv, ibw
-    // kenv -> +/- range over which random numbers are distributed.
-    // ibw -> frequency with which new random numbers chosen.
-    // Interpolates between random numbers.
-    // Hmm... is it possible this ends up being a sort of low-pass filtered random noise?
-    // Yes, that's how Dodge describes it sections 4.9 & 4.11 ex 26.
-    // randi(kenv, ibw) => float amp;
-
-    // For now try filtering SubNoise which is basically RANDH
-    SubNoise noise;
-    noise => blackhole;
-    ibw $ int => noise.rate; // Took FOREVER to find the cast operator $
-    // ; random # modulates amp. of oscillator
-    //   aout  oscil   amp, ifreq, 1  ; use table 1
+    // Main audio patch
     SinOsc oscil => ADSR kenv => Gain outputGain => dac;
     ifreq => oscil.freq;
-
+    iamp => oscil.gain;
     // Envelope
-    //   kenv  expseg  1, p4, iamp, p5, iamp, idur, 1
     kenv.set( att::second, 0::second, 1.0, rel::second);
-    iamp => oscil.gain; // iamp => float kenv;
 
-    // Combine the output factors
-    3 => outputGain.op; // Meaning, multiply the inputs.
+    // outputGain is like a VCA here.
+    // Was confusing how to achieve this in chuck since audio-rate signals
+    // can't be connected directly to ugen parameters like oscil.gain.
+    // The magic `op` value of 3 means multiply the inputs.
+    // Result is: oscil output is multiplied by all the other inputs
+    // to outputGain.
+    // The other way to achieve this would be to make a time loop
+    // and set eg oscil.gain once each loop, but that wouldn't achieve
+    // something like `randi`.
+    3 => outputGain.op;
+
+    //////////////////////////////////////////////////////////////////////////////
+    // Filtered noise generator.
+    // We will use this to modulate the amplitude of the sin wave.
+    // This makes a sort of rumbling or ghostly noise if bandwidth of noise
+    // is wide, and a stronger pitch sound if bandwidth is narrow.
+    //
+    // Feed the amplitude envelope into a random # generator.
+    // Originally in csound this was:
+    //   amp   randi   kenv, ibw
+    // kenv determines +/- range over which random numbers are distributed.
+    // ibw determines frequency with which new random numbers chosen.
+    // randi generates samples linearly interpolated between the random numbers.
+    //
+    // Dodge describes it as a sort of low-pass filtered random noise,
+    // as per Computer Music sections 4.9 & 4.11 ex 26a.
+    //
+    // If I had a working randi unit generator, then I might wire
+    // this into outputGain like:
+    // randi(kenv, ibw) => outputGain;
+    //
+    // For now try filtering SubNoise which is equivalent to RANDH.
+    ////////////////////////////////////////////////////////////////////////////////
+
+    // I scale noise bandwidth relative to frequency.
+    // This is equivalent to my csound version, not in Dodge text.
+    .01 * bw * ifreq => float ibw;
+    <<< "bandwidth for noise is", ibw >>>;
+
+    SubNoise noise;
+    ibw $ int => noise.rate; // Took FOREVER to find the cast operator $
+    ibw => lpf.freq; // This is too aggressive at low pitch
+    noise => LPF lpf => outputGain;
+
+    //////////////////////////////////////////////////////////////////////////////////
+    // Note control
 
     kenv.keyOn();
-    noise => LPF lpf => outputGain;
-    ibw => lpf.freq;
 
     // Play for duration, then detach.
     timeToRelease => now;
@@ -66,43 +84,15 @@ fun void noisemod(float idur, float att, float rel, float dbamp, float bw, float
 }
 
 
-// Utilities from csound that chuck doesn't have
-
-// fun float cpspch(string s)
-// {
-//     // Converts octave.pitch notation to frequency.
-//     // 8.00 -> Midi 60, middle C
-//     60.0 => float midi_value; // Fake it for now
-//     return Std.mtof(midi_value);
-// }
-
-// Ok, chuck DOES have an ampdb equivalent. It's just Std.dbtolin(n)
-// fun float ampdb(float n)
-// {
-//     // Maps db to gain in the range 0-32768ish.
-//     // EQUIVALENT: Math.dbtorms(n) * 100000
-//     // EQUIVALENT: Std.dbtolin(n)
-//     // 60 -> 1000
-//     // 90 -> 31622.7
-//     // Found in csound source code in aops.c:
-//     // EXP(*p->a * LOG10D20)
-//     0.11512925 => float LOG10D20;
-//     return Math.exp(n * LOG10D20);
-// }
-
 // randi doesn't exist in chuck.
-// TODO maybe make a Chugraph or Chugen?
+// Could I make one via a Chugraph or Chugen?
 // See https://chuck.stanford.edu/extend/
 // and examples:
 // https://chuck.stanford.edu/doc/examples/extend/chugraph.ck
 // and https://chuck.stanford.edu/doc/examples/extend/chugen.ck
-fun float randi(float range, float freq)
-{
-    // range: +/- float range over which random numbers are distributed.
-    // freq: how often new random numbers chosen.
-    // Generates samples, linearly interpolated between random numbers.
-    return range; // Fake it for now
-}
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Play notes
 
 // Hacky table of note data copy/munged from old csound version
 float notes[][];
