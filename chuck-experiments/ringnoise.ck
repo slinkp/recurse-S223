@@ -4,11 +4,6 @@
 
 fun void noisemod(float idur, float att, float rel, float dbamp, float bw, float octave, float pc)
 {
-    Math.fabs((idur - rel))::second => dur timeToRelease;
-    <<< "Note start for dur", idur, "db", dbamp, "bw", bw >>>;
-
-    Std.dbtorms(dbamp + 5) => float iamp;
-    <<< "iamp is:", iamp >>>;
 
     // Pitch
     // Map the octave & pitch class to midi pitch: eg [8, 0] -> 60
@@ -16,12 +11,14 @@ fun void noisemod(float idur, float att, float rel, float dbamp, float bw, float
     pc + ipitch => ipitch;
     // Then convert to frequency.
     Std.mtof(ipitch) => float ifreq;
-    <<< "Midi pitch", ipitch, "freq", ifreq>>>;
 
+    //////////////////////////////////////////////////////////////////////////////
     // Main audio patch
+    Std.dbtorms(dbamp + 5) => float iamp;
     SinOsc oscil => ADSR kenv => Gain outputGain => dac;
     ifreq => oscil.freq;
     iamp => oscil.gain;
+
     // Envelope
     kenv.set( att::second, 0::second, 1.0, rel::second);
 
@@ -33,14 +30,15 @@ fun void noisemod(float idur, float att, float rel, float dbamp, float bw, float
     // to outputGain.
     // The other way to achieve this would be to make a time loop
     // and set eg oscil.gain once each loop, but that wouldn't achieve
-    // something like `randi`.
+    // something like driving gain with `randi`.
     3 => outputGain.op;
 
     //////////////////////////////////////////////////////////////////////////////
     // Filtered noise generator.
+    //
     // We will use this to modulate the amplitude of the sin wave.
     // This makes a sort of rumbling or ghostly noise if bandwidth of noise
-    // is wide, and a stronger pitch sound if bandwidth is narrow.
+    // is wide, and a clearer pitch sound if bandwidth is narrow.
     //
     // Feed the amplitude envelope into a random # generator.
     // Originally in csound this was:
@@ -60,27 +58,27 @@ fun void noisemod(float idur, float att, float rel, float dbamp, float bw, float
     ////////////////////////////////////////////////////////////////////////////////
 
     // I scale noise bandwidth relative to frequency.
-    // This is equivalent to my csound version, not in Dodge text.
+    // This is similar to my csound version, not in Dodge text.
     .01 * bw * ifreq => float ibw;
-    <<< "bandwidth for noise is", ibw >>>;
 
-    SubNoise noise;
+    SubNoise noise => LPF lpf => outputGain;
     ibw $ int => noise.rate; // Took FOREVER to find the cast operator $
-    ibw => lpf.freq; // This is too aggressive at low pitch
-    noise => LPF lpf => outputGain;
+    ibw => lpf.freq;
+    10 / bw => float filterQ => lpf.Q;  // Higher Q = narrower noise spectrum = more pitch
 
     //////////////////////////////////////////////////////////////////////////////////
     // Note control
 
-    kenv.keyOn();
+    <<< "Note start dur", idur, "pitch", ipitch, "db", dbamp, "bw", bw, "scaled bw", ibw, "Q", filterQ >>>;
+
+    Math.fabs((idur - rel))::second => dur timeToRelease;
 
     // Play for duration, then detach.
+    kenv.keyOn();
     timeToRelease => now;
-    <<< "Key off, starting decay" >>>;
     kenv.keyOff();
     rel::second => now;
     outputGain =< dac;
-    <<< "Note end" >>>;
 }
 
 
@@ -161,22 +159,21 @@ float notes[][];
 notes[0][0] @=> float timeOffset;
 
 // Play notes
-//for (0=>int i; i < notes.size(); i++) {
-for (0=>int i; i < 4; i++) {
+for (0=>int i; i < notes.size(); i++) {
     notes[i] @=> float note[];
     // Easiest polyphony = spork new shreds forever :D :D :D
+    // More robust approach in polyphony demo.
     spork ~ noisemod(note[1], note[2], note[3], note[4], note[5], note[6], note[7]);
-    0.5::second => now;
     // Go to next start time.
-    // if (i + 1 < notes.size())
-    // {
-    //     Std.fabs(notes[i + 1][0]) => float nextTime;
-    //     nextTime - timeOffset => float delta;
-    //     nextTime => timeOffset;
-    //     <<< "Next note in", delta, "seconds" >>>;
-    //     delta::second => now;
-    // }
+    if (i + 1 < notes.size())
+    {
+        Std.fabs(notes[i + 1][0]) => float nextTime;
+        nextTime - timeOffset => float delta;
+        nextTime => timeOffset;
+        // <<< "Next note in", delta, "seconds" >>>;
+        delta::second => now;
+    }
 }
 <<< "Let notes drain..." >>>;
-10::second => now;
+2::second => now;
 
