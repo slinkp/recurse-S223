@@ -53,6 +53,10 @@ fun void handler()
     {
         on => now;
         on.note => note;
+
+        // Check if a voice is already playing this note and stop it if so.
+        if( note_offs[note] != null ) note_offs[note].signal();
+
         // dynamically repatch
         m => g;
         Std.mtof( note ) => m.freq;
