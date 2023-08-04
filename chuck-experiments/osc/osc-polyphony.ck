@@ -42,7 +42,7 @@ Gain g => JCRev r => dac;
 .2 => r.mix;
 
 // handler for a single voice
-fun void handler()
+fun void handler(int shredNumber)
 {
     // don't connect to dac until we need it
     Mandolin m;
@@ -55,25 +55,35 @@ fun void handler()
         on.note => note;
 
         // Check if a voice is already playing this note and stop it if so.
-        if( note_offs[note] != null ) note_offs[note].signal();
+        if( note_offs[note] != null ) {
+            <<< now, "CLAIM & stop", shredNumber, "Note", note >>>;
+            note_offs[note].signal();
+        } else {
+            <<< now, "CLAIM init", shredNumber, "Note", note >>>;
+        }
+        off @=> note_offs[note];
 
         // dynamically repatch
         m => g;
         Std.mtof( note ) => m.freq;
         Math.random2f( .6, .8 ) => m.pluckPos;
         on.velocity / 128.0 => m.pluck;
-        off @=> note_offs[note];
 
         // Wait for note-off event
         off => now;
-        null @=> note_offs[note];
-        <<< "Note ended, disconnecting" >>>;
+        // Remove our signal handler IFF it's still the one registered for this note.
+        if (note_offs[note] == off) {
+            // Do NOT signal any other event that's there because it's likely
+            // the one that replaced us!
+            null @=> note_offs[note];
+        }
+        <<< now, "FREE", shredNumber, note >>>;
         m =< g;
     }
 }
 
 // spork handlers, one for each voice
-for( 0 => int i; i < 20; i++ ) spork ~ handler();
+for( 0 => int i; i < 20; i++ ) spork ~ handler(i);
 
 // infinite time-loop
 while( true )
@@ -93,7 +103,7 @@ while( true )
             msg.getInt(0) => on.note;
             // store velocity
             msg.getInt(1) => on.velocity;
-            <<< "Got note with", on.note, "and", on.velocity >>>;
+            // <<< "Got note with", on.note, "and", on.velocity >>>;
             // signal the event
             on.signal();
             // yield without advancing time to allow shred to run
