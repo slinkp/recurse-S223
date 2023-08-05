@@ -56,10 +56,10 @@ fun void handler(int shredNumber)
 
         // Check if a voice is already playing this note and stop it if so.
         if( note_offs[note] != null ) {
-            <<< now, "CLAIM & stop", shredNumber, "Note", note >>>;
+            <<< now, "CLAIM used", shredNumber, "STOP", note >>>;
             note_offs[note].signal();
         } else {
-            <<< now, "CLAIM init", shredNumber, "Note", note >>>;
+            <<< now, "CLAIM init", shredNumber, "note", note >>>;
         }
         off @=> note_offs[note];
 
@@ -83,7 +83,7 @@ fun void handler(int shredNumber)
 }
 
 // spork handlers, one for each voice
-for( 0 => int i; i < 20; i++ ) spork ~ handler(i);
+for( 0 => int i; i < 4; i++ ) spork ~ handler(i);
 
 // infinite time-loop
 while( true )

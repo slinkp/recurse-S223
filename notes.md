@@ -1,3 +1,74 @@
+# Sat Aug 5, 2023
+
+I figured out the polyphony voice starvation.
+
+Each voice is processed by one `shred` (Chuck's funny name for threads,
+basically) in one iteration of the `handler` function.
+
+The `off => now;` line in the `handler` function causes the shred to continue
+processing samples (perhaps silently) until that `off` event is signaled,
+otherwise, forever.
+`event => now` is kind of analogous to `await` in some languages.
+
+So to free a voice - a shred - we need to signal the `off` event instance which _that
+specific voice_ registered in the `note_offs` array, so it can get to the end
+of its loop body, and then pick up a new note.
+
+In the first version, note off was happening one of two ways:
+
+- In the `/note/off` message handling, but that was written speculatively - so
+  far my Godot client was never sending those, and in general a MIDI or OSC
+  client can never assume note-off will be sent.  Clients get buggy, hardware
+  gets "stuck", transports drop events, etc.
+  As long as the client is perfect, and eventually stops all notes that it
+  started, we'd be OK!
+
+- At the beginning of `handler`, we check if there is already an `off`
+  registered for this pitch, and signal it if so.
+
+The latter means we will only ever have at most one handler processing a given
+pitch, so if you send a duplicate pitch, the idea is we will free the shred
+that's already playing it so you'll have one free.
+However, it's a naive approach because you have to _already_ have a free shred
+available in order to signal any to stop.
+
+When did this not happen? Well, because we only signaled a shred to complete
+and restart its loop if _another_ free shred received a message for the _same_
+note.
+
+This means the number of busy shreds was always equal to the number of _unique pitches_ received so far.
+
+To see this, imagine a degenerate case, where we set the number of shreds to 1.
+In that case, as soon as you receive one pitch and start handling it, Chuck
+will keep running that shred waiting for note-off forever until _the same
+pitch_ is received. So you can never play any pitch other than that first one.
+
+If we set the number of shreds to 2, the same state happens after 2 _unique_
+pitches are received.
+What if we graph the note being played by each shred, with blank cells representing
+shreds that are not busy _after_ that note is received, and `^^` representing
+a shred continuing to handle the note from the previous line?
+
+Imagine this sequence of notes: `60, 60, 62, 60, 51`
+
+With the old logic, that graph would look like:
+
+| note | shred 0 | shred 1 |
+|------|---------|---------|
+| 60   | 60      |         |
+| 60   |         | 60      |
+| 62   | 62      | ^^      |
+| 60   | ^^      | ^^      |
+| 63   | ^^      | ^^      |
+
+So, in order for this crude polyphony to work, we need a number of voices
+(shreds) equal to the total set of possible pitches. Oops.
+
+## We fixed it! Right?
+
+Not so fast.
+
+
 # Fri July 28, 2023
 
 ## Progress: Godot sending OSC -> UDP -> Chuck ... it beeps!
