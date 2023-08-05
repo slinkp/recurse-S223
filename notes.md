@@ -68,6 +68,54 @@ So, in order for this crude polyphony to work, we need a number of voices
 
 Not so fast.
 
+The fix I made in b3214c48cc6585bd126f7109d451c119baddc170
+moves the check for existing `note_off` events into the "main" shred.
+This is an improvement becaues we don't have to have a free shred available in order
+to stop an existing one playing the same note.
+
+But let's consider the same sequence of notes:
+
+| note | shred 0 | shred 1 |
+|------|---------|---------|
+| 60   | 60      |         |
+| 60   |         | 60      |
+| 62   | 62      | ^^      |
+| 60   | ^^      | 60      |
+| 63   | ^^      | ^^      |
+
+The only improvement in this simple case is that we triggered the `60` on the
+fourth line. We still dropped the final note `63`.
+
+The reason I thought it was fixed was that, in practice, with a limited set of
+pitches (I was using a 2-octave range so 24 pitches) and a large-ish set of
+shreds (I was using 20), it's clearly _better_ - it means we play _most_
+notes. But we still drop some; as long as there are fewer shreds than possible
+notes, without explicit note-off events, there will be pitches we can never
+play.
+
+## Can we do better?
+
+I think the behavior I am really looking for here is like an LRU cache.
+Apparently, synth manufacturers and musicians know this as "voice stealing".
+
+When a note arrives, if there are no free voices, we should free the one that's been
+playing the _longest_. Even if that means cutting off a note that's deliberately
+sustaining, that's likely better than dropping a new note entirely.
+
+I can imagine ways to do that. Something like, keep a reference to the oldest
+playing shred, and when there are no free shreds, forcibly free that one and
+set it to the next-oldest one.
+Am trying to think of the best data structure for this. I think I need to know
+how scoping works in Chuck across shreds (this is ambiguous to me currently). Are global
+vars actually shred-local?
+
+If I get this working, it should be easy to test. In the degenerate case of one free
+shred, we'd have something like a monophonic keyboard. Any note received stops any
+playing note and takes over.
+
+If I get this working, I'd like to submit an example to the Chuck docs, because
+the midi example that I copied my buggy approach from is problematic, and it might be
+hard for people to figure this all out on their own.
 
 # Fri, Aug 4
 
