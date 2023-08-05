@@ -69,6 +69,128 @@ So, in order for this crude polyphony to work, we need a number of voices
 Not so fast.
 
 
+# Fri, Aug 4
+
+- Never-graduate picnic
+
+- Read a bunch of really interest blog posts by recursers
+
+- Fixed my polyphony bug in my chuck script. That was an interesting
+  concurrency logic bug, maybe worth presenting.
+  - I still don't 100% understand the sequence of events that led to
+    the starvation state as of 9df71ec6efe76c2f15fcdc902ff50cc603da56c2,
+    though I understand why the fix worked.
+
+    In the old code, the "free a previous voice already playing this note"
+    check happened inside a voice handler. So assuming we can get into a
+    state where all shreds are waiting for "note off", then you wouldn't ever
+    run the code that frees a busy one because there's a catch 22. This part
+    was easy to understand.  And the fix was just to do that check in the main
+    shred, not in a handler, which pretty obviously just works.
+
+    The part I don't understand is what sequence of notes would lead to them
+    all being busy. It's probably simple, since it happens relatively quickly
+    in a demo.
+
+    I should think through the buggy state and write that up. Blog post!
+
+
+# Thurs, Aug 3
+
+
+- Career stuff: Met with Rhea about what it was like working at jane street.
+- Godot engine: Experiment with adding another wall to the game with a
+  different effect (chorus & phaser) and fixed an error in yesterday's
+  refactoring where only the last configured audio player was used.
+- Went to presentations & never-graduate niceties
+- Went to happy hour, played pictionary. Could not draw the word "Why" :-o
+
+
+# Wed, Aug 2
+
+I have decided I am going to extend 6 weeks. The first 6 have come and
+gone in a flash.
+
+- Met with Sonali about extending recurse, job market, salary market, all the
+  scary stuff. Very very helpful.
+
+- Talked to Thelma, learned a bit about the browser building project, it seems
+  both very intense and very approachable, impressive.
+
+- Noticed the "Careerist Crud" chat stream and, as leetcode-grinding is
+  somewhat in the back of my mind, got interested to see what they're up to.
+  Somewhere I saw mention of the "grind 75" list of problems
+  [here](https://www.techinterviewhandbook.org/grind75)
+  and had a go at "two sum". Solved it in python in about 10 min (including a false
+  start) but it was brute force. I didn't take time to think about better algorithms.
+  Boy am I rusty at this kind of thing.
+
+- I played around with filters in Chuck and got more interesting sounds by
+  playing with the filter bandwidth (Q).
+
+- Paired briefly with Nolen re better organization for my Godot code.
+  He introduced the "Call down, signal up" principle to me,
+  found a description here:
+  https://kidscancode.org/godot_recipes/4.x/basics/node_communication/index.html
+
+  - It took me a minute, but Nolen's suggestion worked, allowing me to move
+    all the audio handling to a top-level generic Node.
+    Ball `_on_body_entered` is still what gets triggered on collision; from
+    that we dispatch `on_hit` with args including the position and body (wall).
+
+- Attended non-technical talks and presented about RSU comp at public companies
+
+# Tuesday, Aug 1
+
+Kind of a lost day.
+
+- Distracted by personal stuff
+
+- A bit of cleanup on yesterday's Chuck instrument.
+
+- Writing yesterday's update
+
+- Far too long writing for tomorrow's non-technical talks (I was requested to
+  present on RSU compensation as a followup to last week's talk on startup
+  stock options). I thought I had less to say about this topic.
+  Ha ha! I have a TON to say about this topic. It was fun and hopefuly valuable
+  to folks tomorrow.
+
+- Met briefly w Mai about panicky feelings re continuing recurse for the full
+  12 week batch vs starting job search ASAP.
+
+- Booked a meeting w Sonali tomorrow about the same.
+
+
+
+# Monday, July 31, 2023
+
+I spent much of today attempting to port a peculiar-sounding and clever Csound
+instrument to ChucK.
+This helped me understand Chuck a lot better.
+And I even dug into the C code for Csound to try to understand the behavior of
+some of its features, namely the `ampdb` converter, which I eventually realized
+had an equivalent in Chuck `Std.dbtolinear` and that what I really wanted was
+the related `Std.dbtorms`.
+
+(My apologies to folks at the Hub who were treated to my laptop blasting out a
+burst of incredibly loud noise before I caught the difference between the two.
+On the other hand, my ears are lucky I was not wearing the earbuds at that moment.)
+
+I still feel like I am not 100% comfortable with Chuck's idiosyncratic handling
+of time.  I did figure out how to wire up things like controlling audio gain
+_at audio rate_ - you can't plug a unit generator directly into eg `Oscil.gain`
+but you _can_ "chuck" multiple signals to eg a `Gain` instance in multiply mode, where
+it multiplies all its inputs every sample.
+
+The instrument doesn't sound good though. There's no native equivalent of the
+critical csound `randi` generator, which linearly interpolates between random
+numbers generated at a specified interval.  The intent is effectively a noise
+with some high frequencies filtered out, which theoretically could be done by
+piping Chuck's `SubNoise` (equivalent to Csounds's `randh`) into a low-pass
+filter of some sort, but I haven't found a filter that sounds even remotely like it.
+
+
 # Fri July 28, 2023
 
 ## Progress: Godot sending OSC -> UDP -> Chuck ... it beeps!
@@ -104,7 +226,7 @@ interesting/fun, as it's currently only a proof of concept.
 Also, it occurs to me that the polyphony demo could be more robust about voice
 starvation. Instead of depending on the client to reliably send note-off
 messages: Every time we start a note, we check if there's a note-off signal
-already registered for that pitch, and call that if not null.
+already registered for that pitch, and signal that if not null.
 
 # Thurs July 27
 

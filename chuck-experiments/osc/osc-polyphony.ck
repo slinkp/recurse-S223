@@ -104,7 +104,12 @@ while( true )
             // store velocity
             msg.getInt(1) => on.velocity;
             // <<< "Got note with", on.note, "and", on.velocity >>>;
-            // signal the event
+            // First stop any handler currently playing same note
+            if( note_offs[on.note] != null ) {
+                <<< now, "Stopping existing note", on.note >>>;
+                note_offs[on.note].signal();
+            }
+            // Signal the "on" event
             on.signal();
             // yield without advancing time to allow shred to run
             me.yield();
