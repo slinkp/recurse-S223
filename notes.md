@@ -1,17 +1,129 @@
 # Mon Aug 7, 2023
 
+- Went to Careerist Crud, had not done that before. I am going to attend this
+  weekly. Had a look at my resume, YIKES it's 4 years behind.
+  Started adding Shopify stuff to it.
+  Tried the recommended resumeworded.com free trial and scored
+  48/100. That's ... some room for improvement.
+
+- Went to intro meetings and met some Fall 2 folks!
+
+## ChucK scope experiments
+
+This little script experiment clarifies some things about scope and timing in ChucK:
+
+```
+"hello from main" => string message;
+
+<<< message >>>;
+
+fun void handler(int shredNumber)
+{
+    "Inner value for shred " + shredNumber => string innerMessage;
+    <<< now, "Inner message for:", shredNumber, "starts as", innerMessage >>>;
+
+    // Delay a random amount of time.
+    Math.random2f( .1, .9 )::second => dur delay;
+    delay => now;
+    <<< now, "Inside:", shredNumber, ", message before update is:", message >>>;
+    ("Updated from " + shredNumber + "!") => message;
+    <<< now, "Inside:", shredNumber, ", message after update is:", message >>>;
+
+    <<< now, "Inner message for:", shredNumber, "is", innerMessage >>>;
+
+}
+
+for( 0 => int i; i < 2; i++ ) spork ~ handler(i);
+
+4::second => now;
+
+<<< now, "Global message now is:", message >>>;
+```
+
+If I run this, the output looks like:
+
+```
+$ chuck scope-test.ck
+[chuck]: cannot bind to tcp port 8888...
+"hello from main" :(string)
+0.000000 Inner message for: 0 starts as Inner value for shred 0
+0.000000 Inner message for: 1 starts as Inner value for shred 1
+10389.385197 Inside: 1 , message before update is: hello from main
+10389.385197 Inside: 1 , message after update is: Updated from 1!
+10389.385197 Inner message for: 1 is Inner value for shred 1
+24469.943342 Inside: 0 , message before update is: Updated from 1!
+24469.943342 Inside: 0 , message after update is: Updated from 0!
+24469.943342 Inner message for: 0 is Inner value for shred 0
+176400.000000 Global message now is: Updated from 0!
+```
+
+From this I deduce:
+
+- Global variables are really global, not thread-locals.
+  Updating a global var from inside a shred updates it for everyone.
+  Last write wins.
+
+- Inside a shred, the shred has its own view of "now", always. Advancing time
+  in one shred doesn't affect the logical state of others - but time is funny, because
+  there's truly only one "now".
+
+- But something in the _main_ shred needs to advance the global time in order
+  for child shreds to advance! If I remove the `4::second => now;` line near
+  the end, then _nothing happens_ and we never get past "hello from main".
+
+## Polyphony next steps: How to write LRU in chuck?
+
+Kind of weird about current design: `note_offs` is indexed by _note_ but shreds
+are not note-specific. This prevents ever modifying the design to multi-trigger
+the same note, which sometimes might be desired. It does satisfy receiving
+arbitrary note-off messages, though.
+
+So:
+
+Create a custom `note_off` type with a `start_time` attribute.
+
+Redo `note_offs` to be tracked in two arrays, via pitch OR shred.
+(TBD: the shred integer I generate, or shred ID? TODO: Does a shred know its own ID?)
+
+Need to null out both any time a note is finished. (Function for that?)
+
+Add a global var `numberActiveVoices` and initialize to zero.
+
+In handler:
+  Set `note_off.start_time` to now.
+  At start of loop, increment global `numberActiveVoices`.
+  At end of loop, decrement global `numberActiveVoices`.
+
+In main loop when receiving a note:
+- Current logic: check for `note_offs[note]` and signal if it exists
+  (ideally we should wait for `note_offs[note]` to be null, and ideally lock)
+- if `numberActiveVoices` == number of shreds:
+  - find event in `note_offs` with _minimum_ value of `start_time`
+  - signal that event
+
+There are likely race conditions though. We might drop a note if we think we have
+one free voice but then start two voices at the same time? Or free two voices
+when we only need to free one?
+
+
+
 # Sat Aug 5, 2023
+
+This might turn into a blog post.
 
 Okay, now I _actually_ figured out the polyphony voice starvation problem in my
 ChucK synth program.
 
-It's a concurrency problem. It's interesting to realize that I have almost
-never written explicitly concurrent code. Web backend software so often means
-using a framework that gives you a "shared nothing" experience where all you
-care about is a method handling the "current" request and you're not mucking
-around with actually wiring up multiple concurrent requests to threads or
-processes. That happens at a higher level that you mostly ignore when working
-on application code.
+It's a concurrency problem. And maybe one that's obvious to anyone who's
+manually written concurrent code with a thread-pool approach - but I never
+have!
+
+It's interesting to realize that I have almost never written explicitly
+concurrent code. Web backend software so often means using a framework that
+gives you a "shared nothing" experience where all you care about is a method
+handling the "current" request and you're not mucking around with actually
+wiring up multiple concurrent requests to threads or processes. That happens at
+a higher level that you mostly ignore when working on application code.
 
 The one exception was ten years ago when I was writing async code at Bitly
 using (a very old version of) Tornado, which I have mostly forgotten, aside
@@ -188,7 +300,7 @@ hard for people to figure this all out on their own.
   different effect (chorus & phaser) and fixed an error in yesterday's
   refactoring where only the last configured audio player was used.
 - Went to presentations & never-graduate niceties
-- Went to happy hour, played pictionary. Could not draw the word "Why" :-o
+- Went to happy hour, played pictionary. Could not draw the word "Try" :-o
 
 
 # Wed, Aug 2
