@@ -82,11 +82,6 @@ So:
 
 Create a custom `note_off` type with a `start_time` attribute.
 
-Redo `note_offs` to be tracked in two arrays, via pitch OR shred.
-(TBD: the shred integer I generate, or shred ID? TODO: Does a shred know its own ID?)
-
-Need to null out both any time a note is finished. (Function for that?)
-
 Add a global var `numberActiveVoices` and initialize to zero.
 
 In handler:
