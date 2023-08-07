@@ -38,7 +38,7 @@ class NoteOffEvent extends Event
 }
 
 // So we can control how many voices active at once (and how many shreds are running).
-1 => int numberVoices;
+20 => int numberVoices;
 // So we can detect when all shreds busy.
 0 => int numberActiveVoices;
 
