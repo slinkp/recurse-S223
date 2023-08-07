@@ -71,7 +71,7 @@ From this I deduce:
   for child shreds to advance! If I remove the `4::second => now;` line near
   the end, then _nothing happens_ and we never get past "hello from main".
 
-## Polyphony next steps: How to write LRU in chuck?
+## ChucK Polyphony next steps: How to write LRU in chuck?
 
 Kind of weird about current design: `note_offs` is indexed by _note_ but shreds
 are not note-specific. This prevents ever modifying the design to multi-trigger
@@ -100,7 +100,21 @@ There are likely race conditions though. We might drop a note if we think we hav
 one free voice but then start two voices at the same time? Or free two voices
 when we only need to free one?
 
+So... that worked out pretty well!
 
+But I noticed when testing with polyphony of 1, that only every other note was
+triggering now. Hmm, weird.
+On reflection and much staring at output printing, it occurred to me that maybe we were _always_ trying to start the
+next note before the existing one finished its cleanup and re-entered the
+handler loop.
+
+To fix, I ended up adding _another_ event to cut down on race conditions: the
+`noteOffEvent` grew a `callbackEvent` attribute so it could signal back to the
+main thread when it was done; this way the main thread can wait for _that_ and
+thus avoid trying to start the next note before the voice is ready.
+
+That done, I can now add balls to the Godot game as fast as I can click without
+_ever_ getting the Chuck process stuck, regardless of polyphony setting. Pretty cool.
 
 # Sat Aug 5, 2023
 
