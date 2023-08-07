@@ -1,20 +1,44 @@
+# Mon Aug 7, 2023
+
 # Sat Aug 5, 2023
 
-I figured out the polyphony voice starvation.
+Okay, now I _actually_ figured out the polyphony voice starvation problem in my
+ChucK synth program.
 
-Each voice is processed by one `shred` (Chuck's funny name for threads,
-basically) in one iteration of the `handler` function.
+It's a concurrency problem. It's interesting to realize that I have almost
+never written explicitly concurrent code. Web backend software so often means
+using a framework that gives you a "shared nothing" experience where all you
+care about is a method handling the "current" request and you're not mucking
+around with actually wiring up multiple concurrent requests to threads or
+processes. That happens at a higher level that you mostly ignore when working
+on application code.
 
-The `off => now;` line in the `handler` function causes the shred to continue
-processing samples (perhaps silently) until that `off` event is signaled,
-otherwise, forever.
-`event => now` is kind of analogous to `await` in some languages.
+The one exception was ten years ago when I was writing async code at Bitly
+using (a very old version of) Tornado, which I have mostly forgotten, aside
+from the general challenge of understanding "callback hell".
 
-So to free a voice - a shred - we need to signal the `off` event instance which _that
-specific voice_ registered in the `note_offs` array, so it can get to the end
-of its loop body, and then pick up a new note.
+So, in the [midi polyphony
+example](https://chuck.stanford.edu/doc/examples/midi/polyfony.ck) that I used
+as my starting point, there is a pool of threads - ChucK uses the "funny" name
+`shreds` for threads.  Each one can make one "voice" or note at a time.  The
+lifetime of a note is one iteration through the infinite loop in the `handler`
+function.
 
-In the first version, note off was happening one of two ways:
+The `off => now;` line in the `handler` function looks weird; 
+it causes the `shred` to continue processing samples (perhaps silently)
+until that `off` event is signaled, otherwise, forever.
+This might be analogous to `await off` in some async languages.
+
+This is true even if, as in my example, the note's amplitude has been reduced
+to zero in a relatively short time. The shred is still busy waiting for that
+event even if you don't hear anything.
+
+So to free a voice and let it start a new note, we need to signal the `off`
+event instance which _that specific voice_ registered in the `note_offs`
+array. This lets the `handler` function proceed to the end
+of its loop iteration, go back to the beginning, and start a new note.
+
+In my first version, as in the midi example, note off was happening one of two ways:
 
 - In the `/note/off` message handling, but that was written speculatively - so
   far my Godot client was never sending those, and in general a MIDI or OSC
@@ -23,35 +47,44 @@ In the first version, note off was happening one of two ways:
   As long as the client is perfect, and eventually stops all notes that it
   started, we'd be OK!
 
-- At the beginning of `handler`, we check if there is already an `off`
+- At the beginning of `handler`, I added a check to see if there is already an `off`
   registered for this pitch, and signal it if so.
 
-The latter means we will only ever have at most one handler processing a given
-pitch, so if you send a duplicate pitch, the idea is we will free the shred
-that's already playing it so you'll have one free.
+The latter meant we will only ever have at most one handler processing a given
+pitch, so if you send a duplicate pitch, the idea was to free the shred
+that's already playing it, so you'll have one free.
 However, it's a naive approach because you have to _already_ have a free shred
-available in order to signal any to stop.
+available in order to get that far in the code and signal one to stop.
 
-When did this not happen? Well, because we only signaled a shred to complete
-and restart its loop if _another_ free shred received a message for the _same_
-note.
-
-This means the number of busy shreds was always equal to the number of _unique pitches_ received so far.
+This meant the number of busy shreds was always equal to the number of _unique pitches_ received so far.
 
 To see this, imagine a degenerate case, where we set the number of shreds to 1.
 In that case, as soon as you receive one pitch and start handling it, Chuck
-will keep running that shred waiting for note-off forever until _the same
-pitch_ is received. So you can never play any pitch other than that first one.
+will keep running that shred waiting for note-off forever. If the client never
+sends note off for that same pitch, you can never play another note.
 
 If we set the number of shreds to 2, the same state happens after 2 _unique_
 pitches are received.
 What if we graph the note being played by each shred, with blank cells representing
 shreds that are not busy _after_ that note is received, and `^^` representing
-a shred continuing to handle the note from the previous line?
+a shred that's still handling the note from the previous line?
 
 Imagine this sequence of notes: `60, 60, 62, 60, 51`
+And imagine the client never sends any "note off" events.
 
-With the old logic, that graph would look like:
+With the example in `midi/polyphony.ck`, that graph would look like:
+
+| note | shred 0 | shred 1 |
+|------|---------|---------|
+| 60   | 60      |         |
+| 60   | ^^      | 60      |
+| 62   | ^^      | ^^      |
+| 60   | ^^      | ^^      |
+| 63   | ^^      | ^^      |
+
+Whoops. This is pretty bad.
+
+With my first "improved" version, as described above, it would look like:
 
 | note | shred 0 | shred 1 |
 |------|---------|---------|
@@ -61,17 +94,20 @@ With the old logic, that graph would look like:
 | 60   | ^^      | ^^      |
 | 63   | ^^      | ^^      |
 
-So, in order for this crude polyphony to work, we need a number of voices
+This is marginally better - we don't accidentally play pitch 60 on two voices
+at once, and we get as far as starting to play pitch 62 - but then we're stuck.
+
+Either way, in order for this crude polyphony to work, we'd need a number of voices
 (shreds) equal to the total set of possible pitches. Oops.
 
 ## We fixed it! Right?
 
 Not so fast.
 
-The fix I made in b3214c48cc6585bd126f7109d451c119baddc170
-moves the check for existing `note_off` events into the "main" shred.
-This is an improvement becaues we don't have to have a free shred available in order
-to stop an existing one playing the same note.
+The fix I made in b3214c48cc6585bd126f7109d451c119baddc170 only moves the check
+for existing `note_off` events into the "main" shred.  This is another slight
+improvement, becaues we don't have to have a free shred available in order to
+stop an existing one playing the same note.
 
 But let's consider the same sequence of notes:
 
@@ -83,13 +119,14 @@ But let's consider the same sequence of notes:
 | 60   | ^^      | 60      |
 | 63   | ^^      | ^^      |
 
-The only improvement in this simple case is that we triggered the `60` on the
+The only improvement in this simple case is that we got as far as triggered the `60` on the
 fourth line. We still dropped the final note `63`.
+And we'll never be able to start any other note that isn't 60 or 62.
 
 The reason I thought it was fixed was that, in practice, with a limited set of
 pitches (I was using a 2-octave range so 24 pitches) and a large-ish set of
 shreds (I was using 20), it's clearly _better_ - it means we play _most_
-notes. But we still drop some; as long as there are fewer shreds than possible
+of those notes. But we still drop some; as long as there are fewer shreds than possible
 notes, without explicit note-off events, there will be pitches we can never
 play.
 
