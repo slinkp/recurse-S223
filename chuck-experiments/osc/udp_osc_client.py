@@ -27,13 +27,13 @@ def osc_message(pitch, event):
     address = event
     args = [osc_int_as_bytes(pitch), osc_int_as_bytes(100)] # MIDI pitch, velocity
     message = osc_string_as_bytes(address)
-    print("Message size is %s: %s" % (len(message), message))
+    # print("Message size is %s: %s" % (len(message), message))
     message += osc_string_as_bytes(typetag)
-    print("Message size is %s: %s" % (len(message), message))
+    # print("Message size is %s: %s" % (len(message), message))
     for arg in args:
         # Assume already padded
         message += arg
-    print("Message size is %s: %s" % (len(message), message))
+    # print("Message size is %s: %s" % (len(message), message))
     return message
 
 
@@ -50,14 +50,32 @@ def osc_string_as_bytes(s):
         b += padding
     return b
 
+def kill():
+    for pitch in range(128):
+        send_off(pitch)
+
 if __name__ == '__main__':
+    import sys
+    if sys.argv[-1].lower() in ('kill', '-k', '--kill'):
+        print("Killing all notes")
+        kill()
+        exit()
+
+    if sys.argv[-1].isdigit():
+        delay_ms = int(sys.argv[-1])
+    else:
+        delay_ms = 100
+
     import time
     print("Playing notes forever, Ctrl-C to stop")
-    mixolydian = [0, 2, 4, 5, 7, 9, 10, 12]
-    base_pitch = 60
+    mixolydian = [0, 0, 0, 2, 4, 5, 7, 9, 10, 12]
+    base_pitch = 50
     pitches = [base_pitch + offset for offset in mixolydian]
+    # And octaves up
+    pitches += [base_pitch + offset + 12 for offset in mixolydian]
+    pitches += [base_pitch + offset + 24 for offset in mixolydian]
     while True:
         pitch = random.choice(pitches)
         send_note(pitch)
-        time.sleep(0.5)
-        send_off(pitch)
+        time.sleep(0.001 * delay_ms)
+        # send_off(pitch)
