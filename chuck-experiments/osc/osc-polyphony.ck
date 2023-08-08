@@ -56,7 +56,7 @@ fun void play_note_using_clarinet(NoteEvent on_event, NoteOffEvent off_event) {
 
     instrument => output_bus;
     Std.mtof( on_event.note ) => instrument.freq;
-    0.4 + on_event.velocity / 128.0 * 0.6 => instrument.startBlowing;
+    0.2 + on_event.velocity / 128.0 * 0.6 => instrument.startBlowing;
 
     // Play until we receive our note-off event.
     off_event => now;
@@ -101,7 +101,13 @@ fun void voice_loop(int shred_number)
         now => off.started;
         off @=> note_offs[note];
 
-        play_note_using_clarinet(on, off);
+        // Randomly choose an instrument and play one note.
+        // TODO handle multiple voices better
+        if (Math.random2(0, 5) > 4) {
+            play_note_using_clarinet(on, off);
+        } else {
+            play_note_using_mandolin(on, off);
+        }
 
         <<< now, "FREEING", shred_number, note >>>;
         // Remove our note off event IFF it's still the one we registered.
