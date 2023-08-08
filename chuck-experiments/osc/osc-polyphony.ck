@@ -117,7 +117,7 @@ fun void voice_loop(int shred_number)
         }
         1 -=> number_active_voices;
         off.finished.signal();
-        <<< now, "Signaled callback that we're free" >>>;
+        <<< now, "Sent finished.signal(), now active:", number_active_voices >>>;
     }
 }
 
@@ -143,6 +143,8 @@ while( true )
             <<< now, "Got note with", on.note, "and", on.velocity, ". active:", number_active_voices >>>;
 
             // First stop any voice currently playing same note, and wait for it.
+            // The reason we wait for the `finished` signal is that otherwise, we will try to handle
+            // the next note on event before the shred is actually finished, and drop a note.
             if( note_offs[on.note] != null ) {
                 <<< now, "Stopping existing note", on.note >>>;
                 note_offs[on.note].signal();
@@ -150,6 +152,9 @@ while( true )
             }
             else if( number_active_voices >= number_voices)
             {
+                if (number_active_voices > number_voices) {
+                    <<< "Bug!", number_active_voices, "active, this should never happen" >>>;
+                }
                 // Voice stealing! If we have no voices free, free the oldest one,
                 // and wait for it.
                 now => time oldest_start_time;
@@ -167,6 +172,7 @@ while( true )
                     oldest_note_off.finished => now;
                 }
                 else {
+                    // This should never happen :)
                     <<< now, "All voices busy and couldn't free one. Bug!" >>>;
                 }
             }
@@ -178,7 +184,7 @@ while( true )
                 me.yield();
             }
             else {
-                // This can still happen occasionally under heavy load
+                // This can still happen occasionally under heavy load, eg many voices with same start time
                 <<< now, "Dropped note!!!!", on.note >>>;
             }
         }
