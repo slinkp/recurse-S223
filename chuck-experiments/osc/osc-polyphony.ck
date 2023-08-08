@@ -1,8 +1,8 @@
 //------------------------------------------------
-// name: polyfony.ck
-// desc: polyfonic mandolin model with OSC control
-//
-// authors: Ananya Misra, Ge Wang, Paul Winkler
+// name: osc-polyphony.ck
+// desc: Polyphony with voice stealing via OSC
+// Author: Paul Winkler
+// Inspired by polyfony.ck by Ananya Misra, Ge Wang
 // send all complaints to /dev/null
 //--------------------------------------------
 
