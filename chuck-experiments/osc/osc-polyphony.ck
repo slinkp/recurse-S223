@@ -32,10 +32,11 @@ class NoteOffEvent extends Event
 {
     time started; // So we can track age
     Event finished; // So we can tell when the note has really stopped.
+    int steal; // 0 = allow to decay, 1 = steal
 }
 
 // So we can control how many voices active at once (and how many shreds are running).
-6 => int number_voices;
+4 => int number_voices;
 // So we can detect when all shreds busy.
 0 => int number_active_voices;
 
@@ -78,7 +79,40 @@ fun void play_note_using_mandolin(NoteEvent on_event, NoteOffEvent off_event) {
 }
 
 fun void play_adsr_synth(NoteEvent on_event, NoteOffEvent off_event) {
-    // TODO
+    // Very crude pseudo-analog synth
+    TriOsc osc1 => ADSR adsr => output_bus;
+    TriOsc osc2 => adsr;
+    TriOsc subosc => adsr;
+    Std.mtof( on_event.note ) => float freq => osc1.freq;
+    freq * 1.0055 => osc2.freq;
+    freq * 0.498 => subosc.freq;
+
+    0.5 => osc1.gain;
+    0.5 => osc2.gain;
+    0.6 => subosc.gain;
+
+    Math.random2(2, 500)::ms => dur attack;
+    Math.random2(2, 50)::ms => dur decay;
+    Math.random2f(0.4, 1.0) => float sustain;
+    Math.random2(10, 800)::ms => dur release;
+    adsr.set( attack, decay, sustain, release);
+
+    adsr.keyOn();
+    <<< now, "synth started", on_event.note >>>;
+
+    // Play until we receive our note-off event.
+    off_event => now;
+    // If we are stealing this voice, don't play the release.
+    <<< now, "ADSR Key off started for", on_event.note >>>;
+    if ( off_event.steal == 1 ) {
+        <<< now, "ADSR interrupted", on_event.note >>>;
+        2::ms => release;
+        adsr.set( attack, decay, sustain, release);
+    }
+    adsr.keyOff();
+    release => now;
+    <<< now, "ADSR finished", on_event.note >>>;
+    adsr =< output_bus;
 }
 
 // Note on is global because the main shred triggers them
@@ -104,10 +138,11 @@ fun void voice_loop(int shred_number)
         // Randomly choose an instrument and play one note.
         // TODO handle multiple voices better
         if (Math.random2(0, 5) > 4) {
-            play_note_using_clarinet(on, off);
+            play_adsr_synth(on, off);
         } else {
             play_note_using_mandolin(on, off);
         }
+
 
         <<< now, "FREEING", shred_number, note >>>;
         // Remove our note off event IFF it's still the one we registered.
@@ -147,6 +182,7 @@ while( true )
             // the next note on event before the shred is actually finished, and drop a note.
             if( note_offs[on.note] != null ) {
                 <<< now, "Stopping existing note", on.note >>>;
+                1 => note_offs[on.note].steal;
                 note_offs[on.note].signal();
                 note_offs[on.note].finished => now;
             }
@@ -167,6 +203,7 @@ while( true )
                 }
                 if( oldest_note_off != null ) {
                     <<< now, "Stealing oldest voice which started", oldest_note_off.started >>>;
+                    1 => oldest_note_off.steal;
                     oldest_note_off.signal();
                     <<< now, "Waiting for cleanup" >>>;
                     oldest_note_off.finished => now;
@@ -191,8 +228,12 @@ while( true )
         else if( msg.address == "/note/off" )
         {
             <<< "handling note off", msg.getInt(0) >>>;
-            if( note_offs[msg.getInt(0)] != null ) note_offs[msg.getInt(0)].signal();
-            // TBD: How does this design handle release time after note-off in eg ADSR?
+            note_offs[msg.getInt(0)] @=> NoteOffEvent off;
+            if( off != null ) {
+                0 => off.steal; // Allow to decay.
+                off.signal();
+                off.finished => now;
+            }
         }
         else
         {
