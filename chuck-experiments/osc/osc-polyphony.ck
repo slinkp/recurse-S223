@@ -35,11 +35,9 @@ class NoteOffEvent extends Event
 }
 
 // So we can control how many voices active at once (and how many shreds are running).
-20 => int number_voices;
+6 => int number_voices;
 // So we can detect when all shreds busy.
 0 => int number_active_voices;
-
-NoteEvent on;
 
 // array of events to trigger when receiving note OFF, indexed by pitch.
 // Note this assumes something like MIDI pitch; would need another strategy
@@ -51,15 +49,47 @@ Gain output_bus => JCRev reverb => dac;
 .1 => output_bus.gain;
 .2 => reverb.mix;
 
+// Wrap up your instrument(s) in functions that take on and off events and play ONE note.
+fun void play_note_using_clarinet(NoteEvent on_event, NoteOffEvent off_event) {
+    // Sustains forever until note-off, then sudden stop.
+    Clarinet instrument;
+
+    instrument => output_bus;
+    Std.mtof( on_event.note ) => instrument.freq;
+    0.4 + on_event.velocity / 128.0 * 0.6 => instrument.startBlowing;
+
+    // Play until we receive our note-off event.
+    off_event => now;
+    instrument.stopBlowing(10.0);
+    instrument =< output_bus;
+}
+
+fun void play_note_using_mandolin(NoteEvent on_event, NoteOffEvent off_event) {
+    Mandolin instrument;
+
+    instrument => output_bus;
+    Std.mtof( on_event.note ) => instrument.freq;
+    Math.random2f( .5, .85 ) => instrument.pluckPos;
+    on_event.velocity / 128.0 => instrument.pluck;
+
+    // Play until we receive our note-off event.
+    off_event => now;
+    instrument =< output_bus;
+}
+
+fun void play_adsr_synth(NoteEvent on_event, NoteOffEvent off_event) {
+    // TODO
+}
+
+// Note on is global because the main shred triggers them
+NoteEvent on;
+
 // Loop function to handle a single voice.
 fun void voice_loop(int shred_number)
 {
 
     NoteOffEvent off;
     int note;
-
-    // Could use any number of ugens here, or wire up your own instrument definition.
-    Mandolin instrument;
 
     // Play one note at a time, forever.
     while( true )
@@ -71,21 +101,14 @@ fun void voice_loop(int shred_number)
         now => off.started;
         off @=> note_offs[note];
 
-        // Configure the synth.
-        instrument => output_bus;
-        Std.mtof( note ) => instrument.freq;
-        Math.random2f( .6, .8 ) => instrument.pluckPos;
-        on.velocity / 128.0 => instrument.pluck;
+        play_note_using_clarinet(on, off);
 
-        // Play until we receive our note-off event.
-        off => now;
         <<< now, "FREEING", shred_number, note >>>;
         // Remove our note off event IFF it's still the one we registered.
         // Otherwise, assume that array slot was overwritten by another shred!
         if (note_offs[note] == off) {
             null @=> note_offs[note];
         }
-        instrument =< output_bus;
         1 -=> number_active_voices;
         off.finished.signal();
         <<< now, "Signaled callback that we're free" >>>;
@@ -141,11 +164,17 @@ while( true )
                     <<< now, "All voices busy and couldn't free one. Bug!" >>>;
                 }
             }
-            // Signal the "on" event
-            <<< now, "On signaled!" >>>;
-            on.signal();
-            // yield without advancing time to allow shred to run
-            me.yield();
+            if (number_active_voices < number_voices) {
+                // Signal the "on" event
+                <<< now, "On signaled!" >>>;
+                on.signal();
+                // yield without advancing time to allow shred to run
+                me.yield();
+            }
+            else {
+                // This can still happen occasionally under heavy load
+                <<< now, "Dropped note!!!!", on.note >>>;
+            }
         }
         else if( msg.address == "/note/off" )
         {
