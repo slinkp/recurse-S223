@@ -196,9 +196,9 @@ while( true )
                 // and wait for it.
                 now => time oldest_start_time;
                 null => NoteOffEvent oldest_note_off;
-                for( 0 => int i; i < note_offs.size(); i++ ) {
-                    if (note_offs[i] != null && note_offs[i].started <= oldest_start_time) {
-                        note_offs[i] @=> oldest_note_off;
+                for( NoteOffEvent maybe_oldest: note_offs ) {
+                    if (maybe_oldest != null && maybe_oldest.started <= oldest_start_time) {
+                        maybe_oldest @=> oldest_note_off;
                         oldest_note_off.started => oldest_start_time;
                     }
                 }
