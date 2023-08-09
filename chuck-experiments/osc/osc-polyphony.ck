@@ -83,7 +83,8 @@ fun void play_adsr_synth(NoteEvent on_event, NoteOffEvent off_event) {
     TriOsc osc1 => ADSR adsr => output_bus;
     TriOsc osc2 => adsr;
     TriOsc subosc => adsr;
-    Std.mtof( on_event.note ) => float freq => osc1.freq;
+    Std.mtof( on_event.note ) => float freq;
+    freq => osc1.freq;
     freq * 1.0055 => osc2.freq;
     freq * 0.498 => subosc.freq;
 
