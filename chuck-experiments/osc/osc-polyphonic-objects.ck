@@ -21,15 +21,17 @@ oin.listenAll();
 // something to shuttle data
 OscMsg msg;
 
-// make our own events
-class NoteEvent extends Event
-{
-    int note; // Assume MIDI range 0-127; 69 == middle C
+// An object to encapsulate note data makes it easier to change the data format
+class NoteParams {
+    int note;  // Assume MIDI range 0-127; 69 == middle C
     int velocity; // Assume MIDI range 0-127
 }
 
-// This is currently ONE global "on" event. That means do NOT update it in child shreds or things get weird.
-NoteEvent on;
+// make our own events
+class NoteEvent extends Event
+{
+    NoteParams params;
+}
 
 class NoteOffEvent extends Event
 {
@@ -48,7 +50,7 @@ class PolyphonicInstrumentBase {
     // So we can detect when all shreds busy.
     0 @=> int number_active_voices;
 
-    // NoteEvent on; // Scoped to this instrument.
+    NoteEvent on; // Scoped to this instrument.
 
     Gain output => blackhole;
 
@@ -57,7 +59,7 @@ class PolyphonicInstrumentBase {
     // for very large or infinite pitch systems.
     NoteOffEvent @ note_offs[128];
 
-    fun void play_one_note(NoteEvent on_event, NoteOffEvent off_event) {
+    fun void play_one_note(NoteParams params, NoteOffEvent off_event) {
         <<< "TODO override this" >>>;
         off_event => now;  // You probably want this.
     }
@@ -75,22 +77,37 @@ class PolyphonicInstrumentBase {
         }
     }
 
-    fun void play(NoteEvent on_event) {
+    fun void stop(int note) {
+        // Call from main shred to stop a note.
+        // Should NOT need to override this.
+        note_offs[note] @=> NoteOffEvent off;
+        if( off != null ) {
+            0 => off.steal; // Allow to release naturally.
+            off.signal();
+            // Wait for it to let us know it's done.
+
+            // BUG: if it takes a while for the note to release,
+            // that voice can't be stolen until it finishes naturally.
+            // How to interrupt that and signal off.finished() early??
+            off.finished => now;
+            <<< "------------------------\n" >>>;
+        }
+    }
+
+    fun void play(NoteParams params) {
         // Call this from your main shred to start a note.
         // Should NOT need to override this.
         // It just starts a note, with voice stealing logic to ensure we never run out of voices.
         //
 
-        // on_event @=> on; // TODO does this scope correctly and child shreds can see it?
-
-        // First stop any voice currently playing same note, and wait for it to stop.
         <<< "Starting play" >>>;
-        if( note_offs[on_event.note] != null ) {
-            <<< now, "Stopping existing note", on_event.note >>>;
-            1 => note_offs[on_event.note].steal;
-            note_offs[on_event.note].signal();
+        // First stop any voice currently playing same note, and wait for it to stop.
+        if( note_offs[params.note] != null ) {
+            <<< now, "Stopping existing note", params.note >>>;
+            1 => note_offs[params.note].steal;
+            note_offs[params.note].signal();
             // Wait for note cleanup code to finish; if we start note before that, the voice won't be free.
-            note_offs[on_event.note].finished => now;
+            note_offs[params.note].finished => now;
         }
         else if( number_active_voices >= number_voices) {
             // Voice stealing! If we have no voices free, free the oldest one,
@@ -119,14 +136,14 @@ class PolyphonicInstrumentBase {
             }
         }
         if (number_active_voices < number_voices) {
-            // Signal the "on" event -
-            // THE ONE WE RECEIVED.
-            on_event.signal();
-            <<< now, "On signaled!", on_event, me >>>;
+            // Signal the "on" event for THIS synth.
+            params @=> on.params;
+            on.signal();
+            <<< now, "On signaled!", on, me >>>;
         }
         else {
             // This shouldn't happen even under heavy load.
-            <<< now, "Dropped note!!!!", on_event.note >>>;
+            <<< now, "Dropped note!!!!", params.note >>>;
         }
     }
 
@@ -135,22 +152,23 @@ class PolyphonicInstrumentBase {
         // You shouldn't need to override this.
         NoteOffEvent off;
         int note;
+        NoteParams params;
 
         while( true )
         {
-            // Wait for a note start to be signaled.
-            <<< "Waiting for a note event in", shred_number, on, me>>>;
+            // Wait for a note start for this instrument to be signaled.
             on => now;
-            <<< "GOt into the note loop!" >>>;
-            on.note => note;
             1 +=> number_active_voices;
+            on.params @=> params;
+            params.note => note;
+            <<< "Got note event", on, "in", shred_number, me, "with", note >>>;
             now => off.started;
             off @=> note_offs[note];
             <<< "Registered note-off", off, "for note", note >>>;
 
             // Start the synth playing. This should wait for `off` internally,
             // and clean itself up (ie disconnect from output).
-            play_one_note(on, off);
+            play_one_note(params, off);
 
             // Remove our note off event IFF it's still the one we registered.
             // Otherwise, assume that array slot was overwritten by another shred!
@@ -168,13 +186,13 @@ class PolyphonicInstrumentBase {
 
 class PolyMando extends PolyphonicInstrumentBase {
 
-    fun void play_one_note(NoteEvent on_event, NoteOffEvent off_event) {
+    fun void play_one_note(NoteParams params, NoteOffEvent off_event) {
         Mandolin instrument;
 
         instrument => output;
-        Std.mtof( on_event.note ) => instrument.freq;
+        Std.mtof( params.note ) => instrument.freq;
         Math.random2f( .5, .85 ) => instrument.pluckPos;
-        on_event.velocity / 128.0 => instrument.pluck;
+        params.velocity / 128.0 => instrument.pluck;
 
         off_event => now;
         instrument =< output;
@@ -184,8 +202,9 @@ class PolyMando extends PolyphonicInstrumentBase {
 // More complicated example handling ADSR
 class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
 
-    fun void play_one_note(NoteEvent on_event, NoteOffEvent off_event) {
+    fun void play_one_note(NoteParams params, NoteOffEvent off_event) {
 
+        <<< "\n\nBANG" >>>;
         dur attack;
         dur decay;
         float sustain;
@@ -196,7 +215,7 @@ class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
         TriOsc osc2 => adsr;
         TriOsc subosc => adsr;
 
-        Std.mtof( on_event.note ) => float freq;
+        Std.mtof( params.note ) => float freq;
         freq => osc1.freq;
         freq * 1.0055 => osc2.freq;
         freq * 0.498 => subosc.freq;
@@ -208,7 +227,7 @@ class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
         Math.random2(2, 500)::ms => attack;
         Math.random2(2, 50)::ms => decay;
         Math.random2f(0.4, 1.0) => sustain;
-        Math.random2(10, 800)::ms => release;
+        Math.random2(10, 2000)::ms => release;
 
         adsr.set( attack, decay, sustain, release);
 
@@ -218,16 +237,16 @@ class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
 
         off_event => now;
 
-        <<< now, "ADSR Key off started for", on_event.note >>>;
+        <<< now, "ADSR Key off started for", params.note >>>;
         // If we are stealing this voice, shorten the release.
         if ( off_event.steal == 1 ) {
-            <<< now, "ADSR interrupted", on_event.note >>>;
+            <<< now, "ADSR interrupted", params.note >>>;
             2::ms => release;
             adsr.set( attack, decay, sustain, release);
         }
         adsr.keyOff();
         release => now;
-        <<< now, "ADSR finished", on_event.note, "in", me >>>;
+        <<< now, "ADSR finished", params.note, "in", me >>>;
         adsr =< output;
     }
 }
@@ -244,7 +263,7 @@ PolyphonicAdsrSynth synth;
 // 2. Wire it up so we can hear it...
 synth.output => output_bus;
 // 3. Say how much polyphony you want.
-synth.setup_voice_shreds(2);
+synth.setup_voice_shreds(1);
 
 PolyMando mando;
 mando.output => output_bus;
@@ -252,11 +271,12 @@ mando.setup_voice_shreds(8);
 
 
 fun PolyphonicInstrumentBase dispatch(OscMsg msg) {
-    // This could return a different instrument based on ... something in the message TBD.
-    if (Math.random2(0, 5) > 4) { // 4) {
-        return synth;
-    } else {
+    if (msg.address.find("mando") > -1) {
+        <<< "Got mandoliln for", msg.address >>>;
         return mando;
+    } else {
+        <<< "Got adsr synth for", msg.address >>>;
+        return synth;
     }
 }
 
@@ -269,34 +289,35 @@ while( true )
     // get the OSC message from the message queue
     while( oin.recv( msg ) )
     {
-        if ( msg.address == "/note/on" )
+        if ( msg.address.find("/note/on") == 0 )
         {
             <<< "Starting note-on..." >>>;
-            // Find the synth to handle this note, and play it.
-            dispatch(msg) @=> PolyphonicInstrumentBase synth;
 
             // Assume a message with 2 int args: note number 0-127 and velocity 0-127.
             // NOTE we could also have used OSC message type of `m`
             // which is embedded midi event.
-            msg.getInt(0) => on.note;
-            msg.getInt(1) => on.velocity;
-            <<< now, "Got note with", on.note, "and", on.velocity >>>;
 
-            synth.play(on);
+            NoteParams params;
+            msg.getInt(0) => params.note;
+            msg.getInt(1) => params.velocity;
+
+            // Find the synth to handle this note, and play it.
+            dispatch(msg) @=> PolyphonicInstrumentBase synth;
+
+            <<< now, "Got note with", params.note, "and", params.velocity >>>;
+
+            synth.play(params);
 
             // yield without advancing time to allow shred to run
             me.yield();
         }
-        else if( msg.address == "/note/off" )
+        else if( msg.address.find("/note/off") == 0 )
         {
-            <<< "handling note off", msg.getInt(0) >>>;
-            // TODO we need to dispatch this to a synth too
-            // note_offs[msg.getInt(0)] @=> NoteOffEvent off;
-            // if( off != null ) {
-            //     0 => off.steal; // Allow to decay.
-            //     off.signal();
-            //     off.finished => now;
-            // }
+            msg.getInt(0) => int note;
+            <<< "handling note off", note >>>;
+            dispatch(msg) @=> PolyphonicInstrumentBase synth;
+            synth.stop(note);
+            me.yield();
         }
         else
         {

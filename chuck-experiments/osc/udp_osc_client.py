@@ -27,7 +27,7 @@ def osc_message(pitch, event):
     address = event
     args = [osc_int_as_bytes(pitch), osc_int_as_bytes(100)] # MIDI pitch, velocity
     message = osc_string_as_bytes(address)
-    # print("Message size is %s: %s" % (len(message), message))
+    print("Message size is %s: %s" % (len(message), message))
     message += osc_string_as_bytes(typetag)
     # print("Message size is %s: %s" % (len(message), message))
     for arg in args:
@@ -74,8 +74,12 @@ if __name__ == '__main__':
     # And octaves up
     pitches += [base_pitch + offset + 12 for offset in mixolydian]
     pitches += [base_pitch + offset + 24 for offset in mixolydian]
+
     while True:
+        instruments = (["synth"] * 2) + (["mando"] * 10)
         pitch = random.choice(pitches)
-        send_note(pitch)
+        instr = random.choice(instruments)
+        send_note(pitch, event="/note/on/" + instr)
         time.sleep(0.001 * delay_ms)
         # send_off(pitch)
+        # time.sleep(0.001 * delay_ms)
