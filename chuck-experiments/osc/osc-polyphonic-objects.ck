@@ -60,7 +60,7 @@ class PolyphonicInstrumentBase {
     NoteOffEvent @ note_offs[128];
 
     fun void play_one_note(NoteParams params, NoteOffEvent off_event) {
-        <<< "TODO override this" >>>;
+        <<< "Playing a note! You should override this" >>>;
         off_event => now;  // You probably want this.
     }
 
@@ -85,10 +85,6 @@ class PolyphonicInstrumentBase {
             0 => off.steal; // Allow to release naturally.
             off.signal();
             // Wait for it to let us know it's done.
-
-            // BUG: if it takes a while for the note to release,
-            // that voice can't be stolen until it finishes naturally.
-            // How to interrupt that and signal off.finished() early??
             off.finished => now;
             <<< "------------------------\n" >>>;
         }
@@ -101,39 +97,38 @@ class PolyphonicInstrumentBase {
         //
 
         <<< "Starting play" >>>;
-        // First stop any voice currently playing same note, and wait for it to stop.
-        if( note_offs[params.note] != null ) {
+
+        // First steal any voice currently playing same note.
+        note_offs[params.note] @=> NoteOffEvent note_off_to_steal;
+        if( note_off_to_steal != null ) {
             <<< now, "Stopping existing note", params.note >>>;
-            1 => note_offs[params.note].steal;
-            note_offs[params.note].signal();
-            // Wait for note cleanup code to finish; if we start note before that, the voice won't be free.
-            note_offs[params.note].finished => now;
         }
-        else if( number_active_voices >= number_voices) {
+        else if (number_active_voices >= number_voices) {
             // Voice stealing! If we have no voices free, free the oldest one,
             // and wait for it.
             if (number_active_voices > number_voices) {
                 <<< "Bug!", number_active_voices, "active, this should never happen" >>>;
             }
             now => time oldest_start_time;
-            null => NoteOffEvent oldest_note_off;
             for( NoteOffEvent maybe_oldest: note_offs ) {
                 if (maybe_oldest != null && maybe_oldest.started <= oldest_start_time) {
-                    maybe_oldest @=> oldest_note_off;
-                    oldest_note_off.started => oldest_start_time;
+                    maybe_oldest @=> note_off_to_steal;
+                    note_off_to_steal.started => oldest_start_time;
                 }
             }
-            if( oldest_note_off != null ) {
-                <<< now, "Stealing oldest voice which started", oldest_note_off.started >>>;
-                1 => oldest_note_off.steal;
-                oldest_note_off.signal();
-                // Wait for note cleanup code to finish; if we start note before that, the voice won't be free.
-                oldest_note_off.finished => now;
-            }
-            else {
+            if (note_off_to_steal == null) {
                 // This should never happen :)
                 <<< now, "All voices busy and couldn't free one. Bug!" >>>;
             }
+            else {
+                <<< now, "Stealing oldest voice which started", note_off_to_steal.started >>>;
+            }
+        }
+        if( note_off_to_steal != null ) {
+            1 => note_off_to_steal.steal;
+            note_off_to_steal.signal();
+            // Wait for note cleanup code to finish; if we start note before that, the voice won't be free.
+            note_off_to_steal.finished => now;
         }
         if (number_active_voices < number_voices) {
             // Signal the "on" event for THIS synth.
@@ -170,6 +165,12 @@ class PolyphonicInstrumentBase {
             // and clean itself up (ie disconnect from output).
             play_one_note(params, off);
 
+            // BUG: if it takes a while for the note to release,
+            // that voice can't be stolen until it finishes naturally.
+            // How to interrupt that and signal off.finished() early??
+
+            // Cleanup
+            //
             // Remove our note off event IFF it's still the one we registered.
             // Otherwise, assume that array slot was overwritten by another shred!
             if (note_offs[note] == off) {
@@ -283,7 +284,8 @@ fun PolyphonicInstrumentBase dispatch(OscMsg msg) {
 // Wire it all up to OSC messages!
 while( true )
 {
-    // wait on OSC event
+    // wait on OSC event.
+    // Interesting: This is the only time advance in the main shred!
     oin => now;
 
     // get the OSC message from the message queue
@@ -305,11 +307,8 @@ while( true )
             dispatch(msg) @=> PolyphonicInstrumentBase synth;
 
             <<< now, "Got note with", params.note, "and", params.velocity >>>;
-
             synth.play(params);
 
-            // yield without advancing time to allow shred to run
-            me.yield();
         }
         else if( msg.address.find("/note/off") == 0 )
         {
@@ -317,12 +316,13 @@ while( true )
             <<< "handling note off", note >>>;
             dispatch(msg) @=> PolyphonicInstrumentBase synth;
             synth.stop(note);
-            me.yield();
         }
         else
         {
             <<< "Unhandled event at address", msg.address, "type", msg.typetag >>>;
         }
+        // yield without advancing time to allow shred to run
+        me.yield();
     }
 }
 
