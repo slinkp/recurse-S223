@@ -5,6 +5,10 @@
 // send all complaints to /dev/null
 //--------------------------------------------
 
+// Load polyphonic framework
+me.dir() => string path;
+Machine.add(path + "polyphonic-framework.ck");
+
 
 // OSC in
 OscIn oin;

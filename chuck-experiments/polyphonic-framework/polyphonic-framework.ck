@@ -10,6 +10,13 @@
 
 // Depends on note-params.ck, note-event.ck, note-off.ck
 
+// Load dependencies. It's OK that these are sporked shreds, it's the same as running multiple files
+// on command line.
+me.dir() => string path;
+Machine.add(path + "note-params.ck");
+Machine.add(path + "note-event.ck");
+Machine.add(path + "note-off.ck");
+
 // Subclass this to get polyphony!
 // Just override `play_one_note`.
 public class PolyphonicInstrumentBase {

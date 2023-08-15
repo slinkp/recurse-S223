@@ -7,8 +7,10 @@ cd $DIRNAME
 echo "Ctrl-C to stop."
 echo "Will listen for OSC events. To send some, try: python udp_osc_client.py"
 
-chuck note-params.ck \
-      note-event.ck \
-      note-off.ck \
-      polyphonic-framework.ck \
-      polyphonic-framework-osc-demo.ck
+# chuck note-params.ck \
+#       note-event.ck \
+#       note-off.ck \
+#       polyphonic-framework.ck \
+#       polyphonic-framework-osc-demo.ck
+
+chuck polyphonic-framework-osc-demo.ck
