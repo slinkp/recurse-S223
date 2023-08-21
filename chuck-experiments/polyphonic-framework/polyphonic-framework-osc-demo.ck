@@ -9,9 +9,19 @@
 // OSC in
 OscIn oin;
 
-// Optional first arg is UDP port for OSC messages.
-if( me.args() ) me.arg(0) => Std.atoi => oin.port;
-else 6449 => oin.port;
+// Listen on port for UDP
+6449 => oin.port;
+
+// Optional first arg is how much polyphony to support
+int polyphony;
+if( me.args() ) {
+    <<< "Got arg", me.arg(0) >>>;
+    me.arg(0) => Std.atoi => polyphony;
+}
+else {
+    4 => polyphony;
+}
+<<< "Set polyphony to", polyphony >>>;
 
 cherr <= "listening for OSC messages over port: " <= oin.port()
       <= "..." <= IO.newline();
@@ -23,7 +33,7 @@ OscMsg msg;
 // Main output bus. JCRev = Chowning style reverb.
 Gain output_bus => JCRev reverb => dac;
 .1 => output_bus.gain;
-.2 => reverb.mix;
+0 => reverb.mix;
 
 // Assume we have loaded polyphonic-framework.ck before now.
 
@@ -51,7 +61,7 @@ PolyMando mando;
 // Step 2. Connect output so we can hear it.
 mando.output => output_bus;
 // Step 3. Say how much polyphony you want.
-mando.setup_voice_shreds(8);
+mando.setup_voice_shreds(polyphony);
 // To make notes, just call mando.play(params) and mando.stop(note) at the desired times,
 // see the main loop at bottom for examples.
 // These are fire-and-forget, you can yield or manage time however you like between calls.
@@ -86,7 +96,7 @@ class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
         Math.random2(2, 500)::ms => attack;
         Math.random2(2, 50)::ms => decay;
         Math.random2f(0.4, 1.0) => sustain;
-        Math.random2(10, 2000)::ms => release;
+        Math.random2(1000, 2000)::ms => release;
 
         adsr.set( attack, decay, sustain, release);
 
@@ -96,10 +106,7 @@ class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
         off_event => now;
 
         // Handle release.
-        // This approach does not currently work well :-(
-        // Once a note starts decaying we can no longer steal that voice :-(
-        <<< now, "ADSR Key off started for", params.note >>>;
-        // If we are stealing this voice, shorten the release.
+        // Can this complexity move into the framework?
         if ( off_event.steal == 1 ) {
             <<< now, "ADSR interrupted", params.note >>>;
             2::ms => release;
@@ -107,28 +114,39 @@ class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
             adsr.keyOff();
             release => now;
         } else {
+            // Experimental attempt at handling natural release from note-off events
+            // AND allowing stealing DURING release.
+            // Does not work yet :)
             adsr.keyOff();
+            <<< now, "ADSR release started for", params.note >>>;
             // Set up a NEW event so we can steal a voice during a long decay.
             // Note we aren't doing even a short decay here, so it may be abrupt
             NoteOffEvent finish_release;
             off_event.started => finish_release.started;
+            off_event.finished @=> finish_release.finished;
             0 => finish_release.steal;
             finish_release @=> note_offs[params.note];
             spork ~ interruptible_sleep(release, finish_release);
             finish_release => now;
+            <<< now, "ADSR release finished" >>>;
         }
         <<< now, "ADSR finished", params.note, "in", me >>>;
         adsr =< output;
     }
 
     fun void interruptible_sleep(dur duration, NoteOffEvent interrupt) {
+        <<< now, "Sleeping with max duration of", duration, "for event", int>>>;
         now + duration => time deadline;
         while ( now < deadline) {
             if (interrupt.steal > 0) {
+                <<< now, "Interrupting sleep with a steal" >>>;
+                // This never seems to actually happen :(
+                interrupt.signal();
                 return;
             }
             1::ms => now;
         }
+        <<< now, "Ending sleep, release timed out" >>>;
         interrupt.signal();
     }
 }
@@ -138,12 +156,11 @@ class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
 // Now wire that up just like other example instrument.
 PolyphonicAdsrSynth synth;
 synth.output => output_bus;
-synth.setup_voice_shreds(2);
+synth.setup_voice_shreds(polyphony);
 
 
 // Route to each instrument depending on OSC message
 fun PolyphonicInstrumentBase get_instrument_from_message(OscMsg msg) {
-    return synth;
     if (msg.address.find("mando") > -1) {
         <<< "Got mandolin for", msg.address >>>;
         return mando;

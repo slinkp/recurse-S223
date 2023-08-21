@@ -72,7 +72,7 @@ if __name__ == '__main__':
     mixolydian = [0, 0, 2, 4, 5, 7, 9, 10]
     base_pitch = 50
     pitches = [base_pitch + offset for offset in mixolydian]
-    # And octaves up
+    # And octaves
     pitches += [base_pitch + offset + 12 for offset in mixolydian]
     pitches += [base_pitch + offset + 24 for offset in mixolydian]
     pitches += [base_pitch + offset + 36 for offset in mixolydian]
@@ -80,11 +80,12 @@ if __name__ == '__main__':
     pitches += [base_pitch + offset -12 for offset in mixolydian]
     pitches += [base_pitch + offset -24 for offset in mixolydian]
 
+    instruments = (["synth"] * 1) + (["mando"] * 0)
+
     while True:
-        instruments = (["synth"] * 2) + (["mando"] * 10)
         pitch = random.choice(pitches)
         instr = random.choice(instruments)
         send_note(pitch, event="/note/on/" + instr)
         time.sleep(0.001 * delay_ms)
-        # send_off(pitch)
-        # time.sleep(0.001 * delay_ms)
+        send_off(pitch)
+        time.sleep(0.001 * delay_ms)
