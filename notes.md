@@ -1,3 +1,52 @@
+# Mon Aug 21
+
+Side quest success: I was able to record some demo videos with system audio
+by installing Blackhole on the mac. Various stumbles on the way.
+
+Tested positive for COVID on Saturday. 
+Good thing I was not at the hub last week.
+Taking things easy today.
+I felt pretty cruddy over the weekend. Improving now maybe?
+I think this a separate thing from whatever I had last weekend? Who knows.
+
+# Week of Aug 14 - 18
+
+This was a really difficult week. I made very little progress.
+I didn't write any updates from embarassment.
+
+Back in Portland. I seem to be sick on top of jet lag. Negative COVID test.  A
+*lot* of difficult personal stuff going on in my life.  I spent much of the
+week tired, depressed, and anxious.  Could not get started at a reasonable
+time, couldn't focus once I did get started.  Not one good night of sleep.  I
+felt physically better mid-week, then worse again Friday.
+
+I hacked some more on chuck polyphony, which has been interesting but I'm not
+sure how close it's getting me to where I want.
+
+My biggest output this week was drafting a big blog post about the ChucK work.
+I also took some (paper) notes on where I'd like my music-game experiments to go.
+The blog post turned into a big time sink; writing is hard, and I think I'll be
+happy with it, but I wish I'd got more actual programming done.
+
+Also experimented with brute force setting polyphony to enough voices to cover
+all possible pitches (in MIDI anyway) at once. This works surprisingly well and
+is probably fine for most purposes. But now I'm down a rabbit hole on a problem
+that is challenging and fun!
+
+# Fri Aug 11
+
+Travel day, hacking on plane!
+Much progress on OOP approach in ChucK. I can now have multiple instruments
+working correctly dispatched from note events in a simple main loop.
+
+Discovered that natural release after note-off still isn't working well.
+When I attempt to steal a voice that's already started the final release phase
+of an ADSR envelope, it just plays until release ends and _then_ starts the
+next note, which throws off timing of everything.
+I got a suggestion from the [ChucK
+discord](https://discord.com/channels/1100930911186468894/1139410540876275752/1139557489772331118),
+and spent much of the flight experimenting with that approach, but no joy yet.
+
 # Wed Aug 9, 2023
 
 Forgot to update yesterday so this is two days!
