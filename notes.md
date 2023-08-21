@@ -1,3 +1,34 @@
+# Wed Aug 9, 2023
+
+Forgot to update yesterday so this is two days!
+
+TODO: There's a really handy `Patch` plugin for chuck which allows wiring
+audio-rate control signals eg LFOs directly to parameters of other ugens. This
+avoids a lot of headache with sporking a controller shred.
+Example here: https://github.com/ccrma/chugins/blob/main/Patch/Patch-example.ck
+
+## Chuck progress
+
+- Figured out why osc-polyphony.ck was dropping notes under heaviest load.
+  It wasn't a timing bug, it was a one-character logic bug! I hadn't realized it was possible
+  to have ALL current notes have a start time of `now`.
+  Change `<` to `<=` and all is well.
+
+
+- Updated osc-polyphony.ck to handle instruments with a note-off eg ADSR.
+
+- Wrote a trivial synth to demo that.
+
+- Much refactoring and cleanup for readability.
+  Also made it easier to swap "instruments".
+
+- Updated python OSC client `udp_osc_client.py` to drive chuck demo harder
+  (and also sound nicer).
+
+- Working on making ChucK polyphony more general with an OOP approach to make it
+  a lot easier to reuse with multiple synth designs.
+  Big refactor. Currently buggy.
+
 # Mon Aug 7, 2023
 
 - Went to Careerist Crud, had not done that before. I am going to attend this
