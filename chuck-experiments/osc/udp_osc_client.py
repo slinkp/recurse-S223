@@ -8,7 +8,7 @@ def send_note(pitch, event="/note/on"):
     packet = osc_message(pitch, event)
     addr = ("127.0.0.1", 6449) # Port hardwired from osc-dump.ck
     client_socket.sendto(packet, addr)
-    print("Sent %s" % packet)
+    #print("Sent %s" % packet)
 
 def send_off(pitch):
     send_note(pitch, event="/note/off")
@@ -27,7 +27,8 @@ def osc_message(pitch, event):
     address = event
     args = [osc_int_as_bytes(pitch), osc_int_as_bytes(100)] # MIDI pitch, velocity
     message = osc_string_as_bytes(address)
-    print("Message size is %s: %s" % (len(message), message))
+    print(address, pitch)
+    #print("Message size is %s: %s" % (len(message), message))
     message += osc_string_as_bytes(typetag)
     # print("Message size is %s: %s" % (len(message), message))
     for arg in args:
@@ -68,12 +69,16 @@ if __name__ == '__main__':
 
     import time
     print("Playing notes forever, Ctrl-C to stop")
-    mixolydian = [0, 0, 0, 2, 4, 5, 7, 9, 10, 12]
+    mixolydian = [0, 0, 2, 4, 5, 7, 9, 10]
     base_pitch = 50
     pitches = [base_pitch + offset for offset in mixolydian]
     # And octaves up
     pitches += [base_pitch + offset + 12 for offset in mixolydian]
     pitches += [base_pitch + offset + 24 for offset in mixolydian]
+    pitches += [base_pitch + offset + 36 for offset in mixolydian]
+    pitches += [base_pitch + offset + 48 for offset in mixolydian]
+    pitches += [base_pitch + offset -12 for offset in mixolydian]
+    pitches += [base_pitch + offset -24 for offset in mixolydian]
 
     while True:
         instruments = (["synth"] * 2) + (["mando"] * 10)
