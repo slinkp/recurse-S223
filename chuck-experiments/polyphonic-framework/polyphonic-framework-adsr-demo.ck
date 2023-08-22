@@ -93,16 +93,7 @@ class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
             // AND allowing stealing DURING release.
             adsr.keyOff();
             <<< now, "ADSR release started for", params.note >>>;
-            // Set up a NEW event so we can steal a voice during a long decay.
-            // Note we aren't doing even a short decay here, so it may be abrupt
-            NoteOffEvent finish_release;
-            off_event.started => finish_release.started;
-            off_event.finished @=> finish_release.finished;
-            0 => finish_release.steal;
-            // TODO maybe we can just re-use off_event?
-            <<< now, "replacing off event", off_event, " with", finish_release, " in", me >>>;
-            finish_release @=> note_offs[params.note];
-            spork ~ interruptible_release(release, finish_release, adsr, params.note);
+            spork ~ interruptible_release(release, off_event, adsr, params.note);
             <<< now, "Sporked interruptible_release, returning without waiting or cleaning up in", me>>>;
         }
     }
@@ -110,6 +101,11 @@ class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
     fun void interruptible_release(dur duration, NoteOffEvent interrupt, ADSR adsr, int note) {
         now + duration => time deadline;
         <<< now, "SLEEPING until max deadline", deadline, "for NoteOffEvent", interrupt, " in", me>>>;
+        // Hacky: Parent shred may have already removed our note off from the registry,
+        // so let's re-register it.
+        if ( note_offs[note] != interrupt ) {
+            interrupt @=> note_offs[note];
+        }
         while ( now < deadline) {
             // This is a bit of a weird hack: we're re-using an event instance as a data object
             // but we're not waiting for it to be signaled, instead we're polling for a data change.
