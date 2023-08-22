@@ -54,12 +54,14 @@ public class PolyphonicInstrumentBase {
         // Call from main shred to stop a note.
         // Should NOT need to override this.
         note_offs[note] @=> NoteOffEvent off;
+        <<< now, "stopping naturally", off, "in", me >>>;
         if( off != null ) {
             0 => off.steal; // Allow to release naturally.
             off.signal();
             // Wait for it to let us know it's done.
+            <<< now, "stop(): waiting for finished event", off.finished, "in", me>>>;
             off.finished => now;
-            <<< "------------------------\n" >>>;
+            <<< now, "stop(): finished received", off.finished, "in", me>>>;
         }
     }
 
@@ -69,12 +71,12 @@ public class PolyphonicInstrumentBase {
         // It just starts a note, with voice stealing logic to ensure we never run out of voices.
         //
 
-        <<< "Starting play" >>>;
+        <<< now, "Starting play, will check for voices to steal" >>>;
 
         // First steal any voice currently playing same note.
         note_offs[params.note] @=> NoteOffEvent note_off_to_steal;
         if( note_off_to_steal != null ) {
-            <<< now, "Stopping existing note", params.note >>>;
+            <<< now, "Stopping existing note", params.note, " off:", note_off_to_steal >>>;
         }
         else if (number_active_voices >= number_voices) {
             // Voice stealing! If we have no voices free, free the oldest one,
@@ -97,17 +99,23 @@ public class PolyphonicInstrumentBase {
                 <<< now, "Stealing oldest voice which started", note_off_to_steal.started >>>;
             }
         }
+        else {
+            <<< now, "We have a voice free.", number_active_voices, "of", number_voices, "busy">>>;
+        }
         if( note_off_to_steal != null ) {
             1 => note_off_to_steal.steal;
+            <<< now, "STEAL signaling", note_off_to_steal >>>;
             note_off_to_steal.signal();
             // Wait for note cleanup code to finish; if we start note before that, the voice won't be free.
+            <<< now, "    Waiting for stolen note cleanup signal in", me>>>;
             note_off_to_steal.finished => now;
+            <<< now, "    Note steal finished.  YAY">>>;
         }
         if (number_active_voices < number_voices) {
             // Signal the "on" event for THIS synth.
             params @=> on.params;
             on.signal();
-            <<< now, "On signaled!", on, me >>>;
+            <<< now, "On signaled!", on, "from", me >>>;
         }
         else {
             // This shouldn't happen even under heavy load.
@@ -129,18 +137,21 @@ public class PolyphonicInstrumentBase {
         while( true )
         {
             // Wait for a note start for this instrument to be signaled.
+            <<< now, "            LLLLLLLLLLLLLL top of voice loop", shred_number >>>;
             on => now;
             1 +=> number_active_voices;
             on.params @=> params;
             params.note => note;
-            <<< "Got note event", on, "in", shred_number, me, "with", note >>>;
             now => off.started;
             off @=> note_offs[note];
-            <<< "Registered note-off", off, "for note", note >>>;
+            <<< now, "Got note event", on, " in", shred_number, me, " with", note >>>;
+            <<< now, "Registered note-off", off, " in", shred_number, me, " with", note >>>;
 
             // Start the synth playing. This should wait for `off` internally,
             // and clean itself up (ie disconnect from output).
+            <<< now, "play_one_note calling from framework in", shred_number, me>>>;
             play_one_note(params, off);
+            <<< now, "play_one_note finished from framework in", shred_number, me>>>;
 
             // BUG: if it takes a while for the note to release,
             // that voice can't be stolen until it finishes naturally.
@@ -150,13 +161,14 @@ public class PolyphonicInstrumentBase {
             //
             // Remove our note off event IFF it's still the one we registered.
             // Otherwise, assume that array slot was overwritten by another shred!
-            // if (note_offs[note] == off) {
-            //     null @=> note_offs[note];
-            // }
-            null @=> note_offs[note]; // Assume this is either `off` or the release-interrupting event
+            if (note_offs[note] == off) {
+                <<< now, "cleaning up expected off", off, "which is actually", note_offs[note], "in shred", shred_number, me >>>;
+                null @=> note_offs[note];
+            }
             1 -=> number_active_voices;
             off.finished.signal();
-            <<< now, "Sent finished.signal(), now active:", number_active_voices >>>;
+            <<< now, "Sent finished.signal() for", off, " now active:", number_active_voices >>>;
+            <<< now, "            LLLLLLLLLLLLLL bottom of voice loop", shred_number >>>;
         }
     }
 }

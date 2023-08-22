@@ -10,8 +10,8 @@ def send_note(pitch, event="/note/on"):
     client_socket.sendto(packet, addr)
     #print("Sent %s" % packet)
 
-def send_off(pitch):
-    send_note(pitch, event="/note/off")
+def send_off(pitch, event="/note/off"):
+    send_note(pitch, event=event)
 
 TAG_INT = "i"
 TAG_STRING = "s"
@@ -82,10 +82,10 @@ if __name__ == '__main__':
 
     instruments = (["synth"] * 1) + (["mando"] * 0)
 
-    while True:
+    while True: # for pitch in [76, 76, 76]:
         pitch = random.choice(pitches)
         instr = random.choice(instruments)
         send_note(pitch, event="/note/on/" + instr)
         time.sleep(0.001 * delay_ms)
-        send_off(pitch)
-        time.sleep(0.001 * delay_ms)
+        # send_off(pitch, event="/note/off/" + instr)
+        # time.sleep(0.001 * delay_ms)

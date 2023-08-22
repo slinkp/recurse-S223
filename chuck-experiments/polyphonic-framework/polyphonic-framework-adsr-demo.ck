@@ -1,6 +1,6 @@
 //------------------------------------------------
-// name: polyphonic-framework-osc-demo.ck
-// desc: Object-oriented polyphony with voice stealing via OSC
+// name: polyphonic-framework-adsr-demo.ck
+// desc: W.I.P. Demo of object-oriented polyphony with handling of ADSR release.
 // Author: Paul Winkler
 // send all complaints to /dev/null
 //--------------------------------------------
@@ -37,35 +37,6 @@ Gain output_bus => JCRev reverb => dac;
 
 // Assume we have loaded polyphonic-framework.ck before now.
 
-//////////////////////////////////////////////////////////////////////
-// Simple example polyphonic instrument
-
-class PolyMando extends PolyphonicInstrumentBase {
-
-    fun void play_one_note(NoteParams params, NoteOffEvent off_event) {
-        Mandolin instrument;
-
-        instrument => output; // output is provided by superclass, please use it.
-        Std.mtof( params.note ) => instrument.freq;
-        Math.random2f( .5, .85 ) => instrument.pluckPos;
-        params.velocity / 128.0 => instrument.pluck;
-
-        off_event => now;
-        instrument =< output;
-    }
-}
-
-// Here's how to use it!
-// Step 1: Make one instance.
-PolyMando mando;
-// Step 2. Connect output so we can hear it.
-mando.output => output_bus;
-// Step 3. Say how much polyphony you want.
-mando.setup_voice_shreds(polyphony);
-// To make notes, just call mando.play(params) and mando.stop(note) at the desired times,
-// see the main loop at bottom for examples.
-// These are fire-and-forget, you can yield or manage time however you like between calls.
-
 
 //////////////////////////////////////////////////////////////////////
 // More complicated instrument with ADSR
@@ -73,7 +44,7 @@ class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
 
     fun void play_one_note(NoteParams params, NoteOffEvent off_event) {
 
-        <<< "\n\nBANG" >>>;
+        <<< now, "\n\nBANG play_one_note called with", params.note, " in", me >>>;
         dur attack;
         dur decay;
         float sustain;
@@ -93,42 +64,78 @@ class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
         0.5 => osc2.gain;
         0.6 => subosc.gain;
 
-        Math.random2(2, 500)::ms => attack;
-        Math.random2(2, 50)::ms => decay;
-        Math.random2f(0.4, 1.0) => sustain;
-        // Math.random2(1000, 2000)::ms => release;
-        1000::ms => release;
+        5::ms => attack;
+        50::ms => decay;
+        0.6 => sustain;
+        4000::ms => release;
 
         adsr.set( attack, decay, sustain, release);
 
         adsr.keyOn();
-
+        <<< now, "keyed on waiting for off in", me>>>;
         // Wait for off signal
         off_event => now;
+        <<< now, "got off event", off_event, "in", me>>>;
 
         // Handle release.
+        // Can this complexity move into the framework?
         if ( off_event.steal == 1 ) {
             <<< now, "ADSR interrupted", params.note >>>;
             2::ms => release;
             adsr.set( attack, decay, sustain, release);
             adsr.keyOff();
             release => now;
+            adsr =< output;
+            <<< now, "Disconnected after quick steal in", me>>>;
+            off_event.finished.signal();
         } else {
-            // Natural release. This breaks timing when stealing voices :(
-            // because we don't have a way to interrupt the release time
-            // so once the release starts, the voice is not stealable.
+            // Experimental attempt at handling natural release from note-off events
+            // AND allowing stealing DURING release.
             adsr.keyOff();
             <<< now, "ADSR release started for", params.note >>>;
-            release => now;
+            // Set up a NEW event so we can steal a voice during a long decay.
+            // Note we aren't doing even a short decay here, so it may be abrupt
+            NoteOffEvent finish_release;
+            off_event.started => finish_release.started;
+            off_event.finished @=> finish_release.finished;
+            0 => finish_release.steal;
+            // TODO maybe we can just re-use off_event?
+            <<< now, "replacing off event", off_event, " with", finish_release, " in", me >>>;
+            finish_release @=> note_offs[params.note];
+            spork ~ interruptible_release(release, finish_release, adsr, params.note);
+            <<< now, "Sporked interruptible_release, returning without waiting or cleaning up in", me>>>;
         }
-        <<< now, "ADSR finished", params.note, "in", me >>>;
+    }
+
+    fun void interruptible_release(dur duration, NoteOffEvent interrupt, ADSR adsr, int note) {
+        now + duration => time deadline;
+        <<< now, "SLEEPING until max deadline", deadline, "for NoteOffEvent", interrupt, " in", me>>>;
+        while ( now < deadline) {
+            // This is a bit of a weird hack: we're re-using an event instance as a data object
+            // but we're not waiting for it to be signaled, instead we're polling for a data change.
+            // This is a workaround for ChucK limitation: there's no way to express
+            // "I want to wait for either of a signal OR a time, whichever is first."
+            if (interrupt.steal > 0) {
+                <<< now, "Interrupting RELEASE with a steal in", me >>>;
+                break;
+            }
+            5::ms => now;
+        }
+        if ( now >= deadline ) {
+            <<< now, "RELEASE DONE via timeout in", me>>>;
+        }
+        <<< now, "ADSR release finished via signaling", interrupt.finished, "in", me >>>;
         adsr =< output;
+        // Clean up our event if it's still there
+        if ( note_offs[note] == interrupt ) {
+            null @=> note_offs[note];
+        }
+        interrupt.finished.signal();
     }
 }
 
 
 
-// Now wire that up just like other example instrument.
 PolyphonicAdsrSynth synth;
 synth.output => output_bus;
 synth.setup_voice_shreds(polyphony);
@@ -136,14 +143,9 @@ synth.setup_voice_shreds(polyphony);
 
 // Route to each instrument depending on OSC message
 fun PolyphonicInstrumentBase get_instrument_from_message(OscMsg msg) {
-    if (msg.address.find("mando") > -1) {
-        <<< "Got mandolin for", msg.address >>>;
-        return mando;
-    } else {
-        <<< "Got adsr synth for", msg.address >>>;
-        return synth;
-    }
+    return synth;
 }
+
 
 // Main loop is easy:
 // Just make calls to play() and stop() at the right times.
@@ -162,7 +164,7 @@ while( true )
     {
         if ( msg.address.find("/note/on") == 0 )
         {
-            <<< "Starting note-on..." >>>;
+            <<< now, "~~~~~~~~~~~~~~~~~~~~~~~~~~~ Starting note-on in main shred", me >>>;
 
             // Assume a message with 2 int args: note number 0-127 and velocity 0-127.
             // NOTE we could also have used OSC message type of `m`
@@ -174,14 +176,17 @@ while( true )
 
             // Find the instrument to handle this note, and play it.
             get_instrument_from_message(msg) @=> PolyphonicInstrumentBase instrument;
+            <<< now, "Starting play in main loop", me>>>;
             instrument.play(params);
+            <<< now, " YAY finished play in main loop", me>>>;
         }
         else if( msg.address.find("/note/off") == 0 )
         {
             get_instrument_from_message(msg) @=> PolyphonicInstrumentBase instrument;
             msg.getInt(0) => int note;
-            <<< "handling note off", note >>>;
+            <<< now, "XXXXXXXXXXXXXXXXXXXXXXX   got note off event, calling stop", note, "in main loop", me>>>;
             instrument.stop(note);
+            <<< now, " YAY STOP call finished in main loop", me>>>;
         }
         else
         {
@@ -191,4 +196,3 @@ while( true )
         me.yield();
     }
 }
-
