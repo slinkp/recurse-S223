@@ -99,7 +99,6 @@ class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
             off_event.started => finish_release.started;
             off_event.finished @=> finish_release.finished;
             0 => finish_release.steal;
-            // TODO maybe we can just re-use off_event?
             <<< now, "replacing off event", off_event, " with", finish_release, " in", me >>>;
             finish_release @=> note_offs[params.note];
             spork ~ interruptible_release(release, finish_release, adsr, params.note);
@@ -107,7 +106,7 @@ class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
         }
     }
 
-    fun void interruptible_release(dur duration, NoteOffEvent interrupt, ADSR adsr, int note) {
+    fun void interruptible_release(dur duration, NoteOffEvent interrupt, UGen adsr, int note) {
         now + duration => time deadline;
         <<< now, "SLEEPING until max deadline", deadline, "for NoteOffEvent", interrupt, " in", me>>>;
         while ( now < deadline) {
@@ -141,12 +140,6 @@ synth.output => output_bus;
 synth.setup_voice_shreds(polyphony);
 
 
-// Route to each instrument depending on OSC message
-fun PolyphonicInstrumentBase get_instrument_from_message(OscMsg msg) {
-    return synth;
-}
-
-
 // Main loop is easy:
 // Just make calls to play() and stop() at the right times.
 // No need to worry how it works or manage events.
@@ -174,18 +167,15 @@ while( true )
             msg.getInt(0) => params.note;
             msg.getInt(1) => params.velocity;
 
-            // Find the instrument to handle this note, and play it.
-            get_instrument_from_message(msg) @=> PolyphonicInstrumentBase instrument;
             <<< now, "Starting play in main loop", me>>>;
-            instrument.play(params);
+            synth.play(params);
             <<< now, " YAY finished play in main loop", me>>>;
         }
         else if( msg.address.find("/note/off") == 0 )
         {
-            get_instrument_from_message(msg) @=> PolyphonicInstrumentBase instrument;
             msg.getInt(0) => int note;
             <<< now, "XXXXXXXXXXXXXXXXXXXXXXX   got note off event, calling stop", note, "in main loop", me>>>;
-            instrument.stop(note);
+            synth.stop(note);
             <<< now, " YAY STOP call finished in main loop", me>>>;
         }
         else
