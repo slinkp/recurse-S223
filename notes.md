@@ -1,3 +1,12 @@
+# Tues Aug 22
+
+I feel physically better, and I *think* I am thinking ok, but my motivation is
+shot. Everything worth doing feels hard, and everything easy enough to do feels pointless.
+Where's the edge of my abilities currently?
+
+The software I want to build seems likely to require a lot of fiddling with
+visuals that I *just don't care about and don't want to do*.
+
 # Mon Aug 21
 
 Side quest success: I was able to record some demo videos with system audio
