@@ -1,3 +1,90 @@
+# Tuesday Aug 29
+
+Today attended the Backend Career Switchers panel, which was interesting and I
+think I had comments that were helpful to a few folks in chat, that felt good.
+
+Resolution for tomorrow: Offer to pair with other recursers on *their*
+projects. I have not been doing that and I think I am missing out by depriving myself of that generosity.
+
+Coding: I did 4 more "Blind 75" leetcode problems, my total is now up to 11.
+(Today: Reverse Linked List, Number of 1 Bits, Construct Binary Tree from
+Preorder and Inorder Traversal, Reverse Bits (in C!)).
+It was fun to try some bit twiddling in C after not having done that forever.
+Also had to look up preorder and inorder traversal as I had no memory of what
+either of them means. I accidentally saw a good starting clue while looking at
+that. I was a bit astonished that my solution worked.
+It uses extra memory that I maybe could have avoided by passing around a bunch of
+indexes instead of building temporary sub-lists, but by that time I wasn't feeling like it :-)
+
+Maybe tomorrow I will try something other than leetcode.
+I may do fewer problems per day as warmups.
+
+# Monday Aug 28 (revised)
+
+Back in NYC! Feeling a little better.
+
+Attended "Careerist Crud Accountability Hour" and added a lot from latest job
+to resume. Now it has all the content, but it's too long and needs a ton of
+edits. Current ResumeWorded score: 43! :-p
+
+I also did a recursive attempt at the "Merge K sorted lists" problem from Friday.
+It was fun and passes test cases, but not surprisingly, it times out.
+I believe it's O(N*K) where K is number of sublists and N is average length of
+sublists. https://leetcode.com/problems/merge-k-sorted-lists/submissions/1034301344/
+
+I don't seem to have any brain cells for project-style work, so I'm banging through more
+leetcode problems specifically the ["blind 75" list on
+neetcode](https://neetcode.io/practice).
+I got 6 working today 
+(Contains Duplicate,  Valid Anagram, Two Sum,  Group Anagrams,  Top K Frequent
+Elements,  Product of Array Except Self), though I needed to ask for a hint for "Product
+of Array Except Self" on Zulip (in the `current batches > Daily Leetcode!` stream).
+(I could not think of any O(N) way to do it without division.
+Note to future self: Look for clues in specific wording of constraints.)
+
+Also, I've done TwoSum before, but I wanted to find an O(N) solution after
+having only done an O(N^2) solution before - and I did, eventually!
+
+## Why leetcode now?
+
+- It's giving me some "oh, I remember now that I'm smart-ish" energy after
+  feelign stuck lately. I need wins!
+- I might as well start challenging that side of my brain which I'll probably need for job interviews.
+
+I may drop by the [after-hours music programming session]() later if I'm not too tired.
+(Update: Nope, was too tired. Jet lag is real!)
+
+# Fri Aug 25
+
+Slacking off on updates again.
+This is two pretty cruddy weeks in a row. I half-seriously considered quitting
+Recurse because of how discouraged and stressed I've been feeling.
+
+Still haven't finished the promised blog post because it's very long and wordy and feels
+too boring to post without a big edit. I'd like more demo videos on it.
+
+At least my COVID is gone.
+
+Today, unsure what to do, I tackled a "hard" leetcode problem, 
+[Merge K sorted lists](https://leetcode.com/problems/merge-k-sorted-lists/submissions/).
+
+I solved it, but my [first
+attempt](https://leetcode.com/problems/merge-k-sorted-lists/submissions/1031695871/),
+while I initially thought it was clever, wasn't very optimal (called `sort()` many times).
+
+My [second](https://leetcode.com/problems/merge-k-sorted-lists/submissions/1034216230/)
+was both simpler and performed a lot better. Basic approach was to 1) flatten and 2)
+sort() once, since python's [timsort
+algorithm](https://en.wikipedia.org/wiki/Timsort) can already take good
+advantage of sorted runs within a list. And indeed this beats 92% of Python
+submissions.
+I'm sure there is a more comp-sci-wizard approach to this though.
+
+Cost of extra K*N memory though, since we need to build a list of all values in
+order to sort.
+
+
+
 # Tues Aug 22
 
 I feel physically better, and I *think* I am thinking ok, but my motivation is
