@@ -264,3 +264,42 @@
  (member* 'chips (list '(potato) (list 'chips (list '(with) 'fish) '(chips))))
  "recursive membership works"
  )
+
+(header "leftmost, p 87-88")
+
+(define leftmost
+  (lambda (l)
+    (cond
+     ((null? l) '())
+     ((atom? (car l))
+      (car l))
+     (else
+      (leftmost (car l))))))
+
+(expects_eq
+ 'potato
+ (leftmost (list '(potato) (list 'chips (list '(with) 'fish) '(chips))))
+ "left item of possibly nested lists")
+
+(expects_eq
+ 'hot
+ (leftmost (list (list '(hot) (list 'tuna '(and_))) 'cheese))
+ "left item of possibly nested lists")
+
+(expects_eq
+ '()
+ (leftmost '())
+ "Null gives null"
+ )
+
+(expects_eq
+ '()
+ (leftmost (list '()))
+ "Null gives null"
+ )
+
+(expects_eq
+ '()
+ (leftmost (list (list (list '() 'four)) 17 '(seventeen)))
+ "Nothing when empty list found"
+ )
