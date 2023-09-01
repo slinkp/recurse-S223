@@ -97,6 +97,13 @@ parser.add_argument(
     help="Number of octaves up from base pitch"
 )
 
+parser.add_argument(
+    '--instrument',
+    default=[],
+    action="append",
+    help="Instrument names to send. If you provide more than one, each note will randomly choose one"
+)
+
 if __name__ == '__main__':
     args = parser.parse_args()
     if args.kill:
@@ -116,7 +123,7 @@ if __name__ == '__main__':
     for octave in range(1, args.octaves):
         pitches += [base_pitch + offset + (12 * octave) for offset in scale]
 
-    instruments = (["synth"] * 1) + (["mando"] * 0)
+    instruments = args.instrument or ['synth']
 
     while True: # for pitch in [76, 76, 76]:
         pitch = random.choice(pitches)
