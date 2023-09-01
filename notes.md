@@ -6,10 +6,19 @@ I did a basic Trie implementation and re-read part of the Sedgwick chapter
 since I didn't remember much about them.
 https://leetcode.com/problems/implement-trie-prefix-tree/
 
-## Other
+## ChucK polyphony
 
-Unsure what to do with my ChucK code; did some easy cleanup and 
-made my Python script easier to use w/o editing by dropping in Argparse.
+Putting this thing to bed - I recorded a demo video of the ADSR problem
+so I can have something to drop into the blog post with actual audio.
+
+I might want to re-record shorter ones with less narration.
+At least I figured out how to record both system output and microphone with
+blackhole + monosnap. Hard to get the levels right though, need to really crank
+my voice volume.
+
+Also hacked on the little Python note-generating script to make it easier to use w/o editing by
+dropping in some arguments. As usual Argparse is nice to work with.
+It's now actually getting fun to listen to running this script.
 
 # Thurs Aug 31
 
