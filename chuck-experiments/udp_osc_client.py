@@ -55,10 +55,9 @@ def osc_string_as_bytes(s):
         b += padding
     return b
 
-def kill():
+def kill(instr=""):
     for pitch in range(128):
-        send_off(pitch)
-
+        send_off(pitch, event="/note/off/%s" % instr)
 
 parser = argparse.ArgumentParser(
     prog='OSC over UDP toy client',
@@ -106,9 +105,13 @@ parser.add_argument(
 
 if __name__ == '__main__':
     args = parser.parse_args()
+
+    instruments = args.instrument or ['synth']
+
     if args.kill:
         print("Killing all notes")
-        kill()
+        for instr in instruments:
+            kill(instr)
         exit()
 
     delay_ms = args.delay_ms
@@ -122,8 +125,6 @@ if __name__ == '__main__':
     # And octaves
     for octave in range(1, args.octaves):
         pitches += [base_pitch + offset + (12 * octave) for offset in scale]
-
-    instruments = args.instrument or ['synth']
 
     while True: # for pitch in [76, 76, 76]:
         pitch = random.choice(pitches)
