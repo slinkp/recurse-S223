@@ -15,5 +15,5 @@ chuck note-params.ck \
       note-event.ck \
       note-off.ck \
       polyphonic-framework.ck \
-      polyphonic-framework-adsr-demo.ck:$POLYPHONY
-      # polyphonic-framework-osc-demo.ck:$POLYPHONY
+      polyphonic-framework-osc-demo.ck:$POLYPHONY
+      # polyphonic-framework-adsr-demo.ck:$POLYPHONY
