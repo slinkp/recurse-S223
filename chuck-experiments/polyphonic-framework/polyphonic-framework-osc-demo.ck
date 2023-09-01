@@ -15,7 +15,6 @@ OscIn oin;
 // Optional first arg is how much polyphony to support
 int polyphony;
 if( me.args() ) {
-    <<< "Got arg", me.arg(0) >>>;
     me.arg(0) => Std.atoi => polyphony;
 }
 else {
@@ -73,7 +72,6 @@ class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
 
     fun void play_one_note(NoteParams params, NoteOffEvent off_event) {
 
-        <<< "\n\nBANG" >>>;
         dur attack;
         dur decay;
         float sustain;
@@ -137,10 +135,8 @@ synth.setup_voice_shreds(polyphony);
 // Route to each instrument depending on OSC message
 fun PolyphonicInstrumentBase get_instrument_from_message(OscMsg msg) {
     if (msg.address.find("mando") > -1) {
-        <<< "Got mandolin for", msg.address >>>;
         return mando;
     } else {
-        <<< "Got adsr synth for", msg.address >>>;
         return synth;
     }
 }
@@ -162,8 +158,6 @@ while( true )
     {
         if ( msg.address.find("/note/on") == 0 )
         {
-            <<< "Starting note-on..." >>>;
-
             // Assume a message with 2 int args: note number 0-127 and velocity 0-127.
             // NOTE we could also have used OSC message type of `m`
             // which is embedded midi event.
@@ -171,6 +165,7 @@ while( true )
             NoteParams params;
             msg.getInt(0) => params.note;
             msg.getInt(1) => params.velocity;
+            <<< "Starting note-on...", params.note >>>;
 
             // Find the instrument to handle this note, and play it.
             get_instrument_from_message(msg) @=> PolyphonicInstrumentBase instrument;

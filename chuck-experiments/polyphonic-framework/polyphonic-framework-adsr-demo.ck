@@ -15,7 +15,6 @@ OscIn oin;
 // Optional first arg is how much polyphony to support
 int polyphony;
 if( me.args() ) {
-    <<< "Got arg", me.arg(0) >>>;
     me.arg(0) => Std.atoi => polyphony;
 }
 else {
@@ -44,7 +43,7 @@ class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
 
     fun void play_one_note(NoteParams params, NoteOffEvent off_event) {
 
-        <<< now, "\n\nBANG play_one_note called with", params.note, " in", me >>>;
+        <<< now, "\n\nplay_one_note called with", params.note, " in", me >>>;
         dur attack;
         dur decay;
         float sustain;
@@ -72,21 +71,21 @@ class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
         adsr.set( attack, decay, sustain, release);
 
         adsr.keyOn();
-        <<< now, "keyed on waiting for off in", me>>>;
+        // <<< now, "keyed on waiting for off in", me>>>;
         // Wait for off signal
         off_event => now;
-        <<< now, "got off event", off_event, "in", me>>>;
+        // <<< now, "got off event", off_event, "in", me>>>;
 
         // Handle release.
         // Can this complexity move into the framework?
         if ( off_event.steal == 1 ) {
-            <<< now, "ADSR interrupted", params.note >>>;
+            <<< now, "ADSR stolen", params.note >>>;
             2::ms => release;
             adsr.set( attack, decay, sustain, release);
             adsr.keyOff();
             release => now;
             adsr =< output;
-            <<< now, "Disconnected after quick steal in", me>>>;
+            // <<< now, "Disconnected after quick steal in", me>>>;
             off_event.finished.signal();
         } else {
             // Experimental attempt at handling natural release from note-off events
@@ -99,16 +98,16 @@ class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
             off_event.started => finish_release.started;
             off_event.finished @=> finish_release.finished;
             0 => finish_release.steal;
-            <<< now, "replacing off event", off_event, " with", finish_release, " in", me >>>;
+            // <<< now, "replacing off event", off_event, " with", finish_release, " in", me >>>;
             finish_release @=> note_offs[params.note];
             spork ~ interruptible_release(release, finish_release, adsr, params.note);
-            <<< now, "Sporked interruptible_release, returning without waiting or cleaning up in", me>>>;
+            // <<< now, "Sporked interruptible_release, returning without waiting or cleaning up in", me>>>;
         }
     }
 
     fun void interruptible_release(dur duration, NoteOffEvent interrupt, UGen adsr, int note) {
         now + duration => time deadline;
-        <<< now, "SLEEPING until max deadline", deadline, "for NoteOffEvent", interrupt, " in", me>>>;
+        // <<< now, "SLEEPING until max deadline", deadline, "for NoteOffEvent", interrupt, " in", me>>>;
         while ( now < deadline) {
             // This is a bit of a weird hack: we're re-using an event instance as a data object
             // but we're not waiting for it to be signaled, instead we're polling for a data change.
@@ -121,9 +120,8 @@ class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
             5::ms => now;
         }
         if ( now >= deadline ) {
-            <<< now, "RELEASE DONE via timeout in", me>>>;
+            // <<< now, "RELEASE DONE via timeout in", me>>>;
         }
-        <<< now, "ADSR release finished via signaling", interrupt.finished, "in", me >>>;
         adsr =< output;
         // Clean up our event if it's still there
         if ( note_offs[note] == interrupt ) {
@@ -157,7 +155,7 @@ while( true )
     {
         if ( msg.address.find("/note/on") == 0 )
         {
-            <<< now, "~~~~~~~~~~~~~~~~~~~~~~~~~~~ Starting note-on in main shred", me >>>;
+            // <<< now, "~~~~~~~~~~~~~~~~~~~~~~~~~~~ Starting note-on in main shred", me >>>;
 
             // Assume a message with 2 int args: note number 0-127 and velocity 0-127.
             // NOTE we could also have used OSC message type of `m`
@@ -169,14 +167,12 @@ while( true )
 
             <<< now, "Starting play in main loop", me>>>;
             synth.play(params);
-            <<< now, " YAY finished play in main loop", me>>>;
         }
         else if( msg.address.find("/note/off") == 0 )
         {
             msg.getInt(0) => int note;
-            <<< now, "XXXXXXXXXXXXXXXXXXXXXXX   got note off event, calling stop", note, "in main loop", me>>>;
+            <<< now, "   got note off event, calling stop", note, "in main loop", me>>>;
             synth.stop(note);
-            <<< now, " YAY STOP call finished in main loop", me>>>;
         }
         else
         {
