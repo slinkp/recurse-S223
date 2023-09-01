@@ -1,42 +1,93 @@
+# Fri Sept 1
+
+## Leetcode: blind75 up to 15
+
+I did a basic Trie implementation and re-read part of the Sedgwick chapter
+since I didn't remember much about them.
+https://leetcode.com/problems/implement-trie-prefix-tree/
+
+## Other
+
+Unsure what to do with my ChucK code; did some easy cleanup and 
+made my Python script easier to use w/o editing by dropping in Argparse.
+
+# Thurs Aug 31
+
+## Pairing with Moritz on Crafting Interpreters
+
+This was the most fun thing I've done all week.
+Note to self: Pair more on other people's stuff!!
+
+I spent about 2 hours pairing with Moritz on his project working through
+[Crafting Interpreters](https://craftinginterpreters.com/), building the "Lox" language in Python.
+Much of it was a tour of what he'd done so far and explaining how it worked.
+I was pretty pleased that I was able to follow along. While touring the code
+and playing with the REPL we found a bug in the interpreter code for function calls.
+(It took me a while to understand the solution because I was confused about
+which interpreter methods did and didn't consume the current token)
+
+He was up to adding support for function definitions so we starting having a
+try at that. We decided to skip the book example Java code and just have a go
+at solving in Python based on what he'd built already. This was quite fun and
+made me want to do the whole book!
+
+## Algorithms
+
+Briefly read about dynamic programming in Algorithms (3rd ed)
+(Cormen et al) which I found in the Recurse library.
+Refreshed my memory about _when_ it's appropriate, need to lock that in.
+
+Then had to do some irritating time-sensitive parental stuff (my daughter
+is starting a new school!).
+
+## Leetcode: blind75 up to 14
+
+Did: Valid Anagram, Valid Parentheses.
+Didn't have time for anything substantial so I just banged out a couple "easy" ones.
+
+Had a go at "container with most water" and haven't thought of anything beyond
+brute force, which times out:
+https://leetcode.com/problems/container-with-most-water/
+
+Then presentations! Loved Ellen's human-vs-fly game.
+
+
+
+
 # Weds Aug 30
 
 ## Daily leetcode / blind 75:
 
-did "missing number" pretty easily as today's warmup.
-This one has not one but TWO annoying "magic solutions"! I happened to spot one
-of them, would never have guessed the other trick.
+Did "missing number" pretty easily as today's warmup. This one has not one but TWO annoying "magic solutions"! I happened to spot one of them, would never have guessed the other trick.
 
 
-I put off the hard problem [binary tree max sum](https://leetcode.com/problems/binary-tree-maximum-path-sum/)
-because if I'm going to even attempt that, I should really spend some time
-reviewing basic binary tree stuff - it's been a few years.
-Also I have a vague intuition that solving this efficiently might require either memoized
-recursion or dynamic programming - and that's been a few years too.
-Not sure how to account for being able to walk _up_ the tree as long as you
-don't cycle.
+I put off the hard problem [binary tree max sum](https://leetcode.com/problems/binary-tree-maximum-path-sum/) because if I'm going to even attempt that, I should really spend some time reviewing basic binary tree stuff - it's been a few years. Also I have a vague intuition that solving this efficiently might require either memoized recursion or dynamic programming - and that's been a few years too. Not sure how to account for being able to walk _up_ the tree as long as you don't cycle.
 
-Maybe I want to spend some time revisiting algorithms. I shied away from that
-kind of study during my first 6 weeks because it's in the "things i'm *supposed* to know"
-category, but I'm finding it more fun/exciting stretching the comp sci part of
-my brain.
+Maybe I want to spend some time revisiting algorithms. I shied away from that kind of study during my first 6 weeks because it's in the "things i'm *supposed* to know" category, but I'm finding it more fun/exciting stretching the comp sci part of my brain.
+
+## System design interview prep group
+
+Am really liking this group. We went through a "Design S3" challenge and had great discussions. Good to stretch these slightly atrophied muscles.
+
+Spent some time after that skimming through the amazing [Jepsen series of posts](https://aphyr.com/posts/281-jepsen-on-the-perils-of-network-partitions)
+from 2013. TL;DR consistency in distributed systems is hard.
 
 ## Mid-batch mixer
 
-Good breakout sessions. One topic was What's been challenging:
+Good breakout sessions. One topic was "What's been challenging".
+Had a good discussion with Erika and Moritz.
 
-Moritz idea #1: Recreate "impossible things" day solo - just do as much as
-possible in 1 day.
+Moritz idea #1: Recreate "impossible things" day solo - just do as much as possible in 1 day.
 
 Moritz idea #2: just say "I didn't do it" to let go of the emotional charge, and pivot to something else.
 
-Erika idea: very small chunks 1 hour
-eg how she did https://erikarow.land/notes/stuff-i-learned
+Erika idea: very small chunks, max 1 hour: eg how she did https://erikarow.land/notes/stuff-i-learned
+
+Also met variously w/ Viraat, Doron, Kathryn, Liz. Did I forget one?
 
 ## Scheme
 
-I wrote the `leftmost` function on pp 87-88 in The Little Schemer to cap off my day.
-I didn't have time left to try something ambitious, but it was good to refresh
-what I learned of scheme in July and do another function.
+I wrote the `leftmost` function on pp 87-88 in The Little Schemer to cap off my day. I didn't have time left to try something ambitious, but it was good to refresh what I learned of scheme in July and do another function.
 
 
 # Tuesday Aug 29
