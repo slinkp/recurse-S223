@@ -138,6 +138,37 @@ synth.output => output_bus;
 synth.setup_voice_shreds(polyphony);
 
 
+// Mando still works without all that nonsense, because it doesn't need release handling.
+class PolyMando extends PolyphonicInstrumentBase {
+    fun void play_one_note(NoteParams params, NoteOffEvent off_event) {
+        Mandolin instrument;
+
+        instrument => output; // output is provided by superclass, please use it.
+        Std.mtof( params.note ) => instrument.freq;
+        Math.random2f( .5, .85 ) => instrument.pluckPos;
+        params.velocity / 128.0 => instrument.pluck;
+
+        off_event => now;
+        instrument =< output;
+    }
+}
+
+// Here's how to use it!
+// Step 1: Make one instance.
+PolyMando mando;
+mando.output => output_bus;
+mando.setup_voice_shreds(polyphony);
+
+
+// Route to each instrument depending on OSC message
+fun PolyphonicInstrumentBase get_instrument_from_message(OscMsg msg) {
+    if (msg.address.find("mando") > -1) {
+        return mando;
+    } else {
+        return synth;
+    }
+}
+
 // Main loop is easy:
 // Just make calls to play() and stop() at the right times.
 // No need to worry how it works or manage events.
@@ -166,13 +197,15 @@ while( true )
             msg.getInt(1) => params.velocity;
 
             <<< now, "Starting play in main loop", me>>>;
-            synth.play(params);
+            get_instrument_from_message(msg) @=> PolyphonicInstrumentBase instrument;
+            instrument.play(params);
         }
         else if( msg.address.find("/note/off") == 0 )
         {
             msg.getInt(0) => int note;
             <<< now, "   got note off event, calling stop", note, "in main loop", me>>>;
-            synth.stop(note);
+            get_instrument_from_message(msg) @=> PolyphonicInstrumentBase instrument;
+            instrument.stop(note);
         }
         else
         {
