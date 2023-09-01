@@ -1,6 +1,10 @@
+#!/usr/bin/env python3
+
+import argparse
 import socket
 import struct
 import random
+
 
 def send_note(pitch, event="/note/on"):
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -55,30 +59,62 @@ def kill():
     for pitch in range(128):
         send_off(pitch)
 
+
+parser = argparse.ArgumentParser(
+    prog='OSC over UDP toy client',
+    description='Sends hardcoded OSC messages over UDP regularly until killed',
+    )
+
+parser.add_argument(
+    '-k', '--kill',
+    action="store_true",
+    help="send note-off for all pitches"
+)
+parser.add_argument(
+    '-o', '--note-offs',
+    action="store_true",
+    help="Send note-off event for previous note just before each note-on",
+)
+
+parser.add_argument(
+    'delay_ms',
+    default=100,
+    type=int,
+    help="Time between notes in milliseconds"
+)
+
+parser.add_argument(
+    '--base-pitch',
+    default=38,
+    type=int,
+    help="Lowest MIDI pitch"
+)
+
+parser.add_argument(
+    '--octaves',
+    default=4,
+    type=int,
+    help="Number of octaves up from base pitch"
+)
+
 if __name__ == '__main__':
-    import sys
-    if sys.argv[-1].lower() in ('kill', '-k', '--kill'):
+    args = parser.parse_args()
+    if args.kill:
         print("Killing all notes")
         kill()
         exit()
 
-    if sys.argv[-1].isdigit():
-        delay_ms = int(sys.argv[-1])
-    else:
-        delay_ms = 100
+    delay_ms = args.delay_ms
 
     import time
     print("Playing notes forever, Ctrl-C to stop")
     mixolydian = [0, 0, 2, 4, 5, 7, 9, 10]
-    base_pitch = 50
-    pitches = [base_pitch + offset for offset in mixolydian]
+    scale = mixolydian
+    base_pitch = args.base_pitch
+    pitches = [base_pitch + offset for offset in scale]
     # And octaves
-    pitches += [base_pitch + offset + 12 for offset in mixolydian]
-    pitches += [base_pitch + offset + 24 for offset in mixolydian]
-    pitches += [base_pitch + offset + 36 for offset in mixolydian]
-    pitches += [base_pitch + offset + 48 for offset in mixolydian]
-    pitches += [base_pitch + offset -12 for offset in mixolydian]
-    pitches += [base_pitch + offset -24 for offset in mixolydian]
+    for octave in range(1, args.octaves):
+        pitches += [base_pitch + offset + (12 * octave) for offset in scale]
 
     instruments = (["synth"] * 1) + (["mando"] * 0)
 
@@ -87,5 +123,5 @@ if __name__ == '__main__':
         instr = random.choice(instruments)
         send_note(pitch, event="/note/on/" + instr)
         time.sleep(0.001 * delay_ms)
-        # send_off(pitch, event="/note/off/" + instr)
-        # time.sleep(0.001 * delay_ms)
+        if args.note_offs:
+            send_off(pitch, event="/note/off/" + instr)
