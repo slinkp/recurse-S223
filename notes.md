@@ -1,3 +1,44 @@
+# Weds Aug 30
+
+## Daily leetcode / blind 75:
+
+did "missing number" pretty easily as today's warmup.
+This one has not one but TWO annoying "magic solutions"! I happened to spot one
+of them, would never have guessed the other trick.
+
+
+I put off the hard problem [binary tree max sum](https://leetcode.com/problems/binary-tree-maximum-path-sum/)
+because if I'm going to even attempt that, I should really spend some time
+reviewing basic binary tree stuff - it's been a few years.
+Also I have a vague intuition that solving this efficiently might require either memoized
+recursion or dynamic programming - and that's been a few years too.
+Not sure how to account for being able to walk _up_ the tree as long as you
+don't cycle.
+
+Maybe I want to spend some time revisiting algorithms. I shied away from that
+kind of study during my first 6 weeks because it's in the "things i'm *supposed* to know"
+category, but I'm finding it more fun/exciting stretching the comp sci part of
+my brain.
+
+## Mid-batch mixer
+
+Good breakout sessions. One topic was What's been challenging:
+
+Moritz idea #1: Recreate "impossible things" day solo - just do as much as
+possible in 1 day.
+
+Moritz idea #2: just say "I didn't do it" to let go of the emotional charge, and pivot to something else.
+
+Erika idea: very small chunks 1 hour
+eg how she did https://erikarow.land/notes/stuff-i-learned
+
+## Scheme
+
+I wrote the `leftmost` function on pp 87-88 in The Little Schemer to cap off my day.
+I didn't have time left to try something ambitious, but it was good to refresh
+what I learned of scheme in July and do another function.
+
+
 # Tuesday Aug 29
 
 Today attended the Backend Career Switchers panel, which was interesting and I
