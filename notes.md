@@ -1,3 +1,38 @@
+# Tuesday Sept 5 
+
+Skipped yesterday (Labor day).
+
+I have let go of the ChucK + Godot music-exploration "game" project.
+It was too much of an undefined art project. I am good at improvising my way through undefined art
+projects, *when* I have either a clear short time frame (eg "I'm going to paint for
+an hour and see what happens")... *Or* a clear idea of how to know when it's
+done *and* enough familiarity with tools/techniques that I can get into a flow.
+
+On this project, I had none of the above. And I wasn't finding the motivation to break it down
+into pieces until anything became clear. It was too easy to get lost in the
+weeds exploring tiny areas and then end up with nothing that felt substantial.
+I didn't really enjoy working with the pointy-clicky Godot interface at all.
+It felt too much like "not programming" and not working the muscles I wanted to work.
+
+My whole purpose in attending Recurse could be summed up as "Build confidence".
+This project was weakening it instead.
+
+So! Pivot! What can I do in the time I have left?
+
+I had a great time pairing for a couple hours on [Crafting Interpreters]() with
+Moritz last week.
+Today I thought I'd see how far can I get from zero, given a familiar language
+(Python)?
+
+It turns out the answer is quite far. Today in ~4 hours of focused work I
+finished chapter 6. The scanner and AST are done. The AST pretty-printer works.
+Yay! This is pretty satisfying.
+
+Also played with some newish-to-me Python features for the AST + visitor stuff:
+Python 3 type declarations, checking those with mypy, using `dataclasses` to
+reduce boilerplate.
+
+
 # Fri Sept 1
 
 ## Leetcode: blind75 up to 15
