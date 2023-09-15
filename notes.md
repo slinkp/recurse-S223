@@ -1,4 +1,228 @@
-# Tuesday Sept 5 
+# Thurs Sept 14
+
+Penultimate pre-never-graduation day!
+
+## Crafting Interpreters progress: Ch 11 finished - lexical scope and static analysis
+
+A whole chapter about the problem of closures in lexical scope!
+
+Fascinating that at least two alternative solutions are briefly mentioned then
+passed by ([Persistent data structures](https://craftinginterpreters.com/resolving-and-binding.html#persistent-environments),
+or making a new copy of the environment every time you declare a new variable,
+a la Scheme). Doing a separate pass on the AST sounds fun though.
+
+This turned out pretty tough, but I finished it eventually.
+
+Also did a mob session looking at TWO nascent Lox interpreters in OCaml.
+This was pretty interesting though I had a hard time following as I've not
+learned basic OCaml syntax.  I wrongly thought that familiarity with Scheme
+would help, ha ha. This was fun though.
+
+## End of Batch stuff
+
+Final presentations and happy hour, sob sob. I got choked up. Now I'm feeling pretty down
+about things ending.
+
+
+# Wed Sept 13
+
+## Crafting Interpreters progress: Chapters 9-10 finished
+
+Fun stuff today: Functions, closures, control flow (`if`, `for`, `while`).
+
+The "while" loops were extremely satisfying: took literally 8 minutes to wire
+up and didn't need to look at the book code. Rarely in this project has
+anything come together like that. Functions were a lot harder :)
+
+The "for" loops were fun too - implemented purely as syntax sugar as per the book.
+
+Also fixed yesterday's remaining bug in error reporting. No more failures.
+
+## Job stuff: Meeting about interview prep
+
+This was a good one led by Sonali. More information is good to have, but I am
+not looking forward to how long things reportedly take in the current
+environment.
+Feeling good about starting to prep though.
+
+
+# Tue Sept 12
+
+Half day as my sister was in town.
+
+## Crafting Interpreters progress: Chapter 8 finished
+
+Statements, blocks, variables, assignment, lexical scoping!
+It's almost a real language!
+
+So I can run this script (although the reply currently requires exactly one statement per line):
+```
+var a = 1;
+{
+  var a = 99;
+  print a;  // prints 99
+}
+print a; // prints 1
+{
+  a = a - 1; // no `var` so this is found/updated in enclosing scope
+}
+print a; // prints 0
+
+```
+
+### Bugs fixed
+
+Lots of little issues found when I wired up the chapter 8 tests.
+
+Still 9 test failures though. All are of this sort, what's up with that?
+Confirmed that exit code is 65 as expected, message matches, and messages goes
+to stderr as expected. WTF.
+
+```
+FAIL test/variable/use_this_as_var.lox
+     Unexpected output on stderr:
+     [2] Error at 'this': Expect variable name.
+     Missing expected error: [2] Error at 'this': Expect variable name.
+```
+
+
+# Mon Sept 11
+
+## Careerist Crud Accountability Hour
+
+I squished my resume back down to 2 pages, made lots of changes suggested by
+[resumeworded.com](resumeworded.com) and got score up from 43 to 82.
+
+I had it grade my linkedin profile too, inched that up from a measly 18/100 to
+24/100, clearly that needs work.
+
+## Crafting Intepreters progress: Chapter 8.1
+
+Statements! `print "hello world";` now works.
+
+I did a bit of hacking to keep tests of prior chapters working, since we
+changed the interpreter from interpreting (nested) expressions to interpeting
+only complete statements.
+
+More fun tooling: I figured out how to get coverage report for
+the hand-written unit tests AND the Dart tests.
+TL;DR
+
+* With coverage.py, `coverage --append` allows multiple command invocations to append to
+  the same report. Eg `./bin/coverage run --append ./lox_ch7.py`.
+* The Dart test runner allows passing multiple args to your lox interpreter
+  by prefacing *each one* with `-a`.
+* So for each chapter, I do something like this: `dart test/test.dart chap07_evaluating --interpreter ./bin/coverage -a run -a --append -a ./lox_ch7.py`
+
+*Lots* of chapter 8 tests are failing, hmm.
+
+# Fri Sept 8
+
+## Crafting Interpreters progress: Chapter 7 done
+
+### Test suite and bug fixes
+
+I realized from [other participants' comments](https://recurse.zulipchat.c
+om/#narrow/stream/19042-.F0.9F.A7.91.E2.80.8D.F0.9F.92.BB-current-batches/topic/Crafting.20Interpreters.20
+.28F1'23.29/near/386917642) that I'd entirely missed
+the Dart test suite provided in the crafting interpreters repo!
+I'm not removing the few unit tests I wrote, but I spent some time wiring these
+up to my test wrapper script as well. Yay.
+I got all the tests for chapters 4-6 passing, which required fixing several bugs!
+
+### Wiring up the interpeter
+
+It doesn't do much yet, but expression evaluation works in the repl:
+
+```
+> 1 + 2
+3
+> 3 + (4 - 5)
+2
+> "hello" + " world"
+hello world
+> "hello" + 9
+Operands must be two numbers or two strings.
+[line 1]
+> nil + 9
+Operands must be two numbers or two strings.
+[line 1]
+> nil == nil
+True
+> 1 == 1 == 1
+> 0 == 9
+False
+```
+
+Also I didn't like that in the book error handling is done in the main script,
+which requires everything else to depend on it. I factored that out into an
+`ErrorReporter` thing that I pass around to classes that need it. No more
+circular dependency. Later noticed an aside in the book suggesting exactly
+this, heh!
+
+# Thurs Sept 7
+
+## Crafting Interpreters progress: Chapter 6
+
+I got through chapter 6. The parser is now wired up!
+One of the fun things about this is the AST printer
+based on the Visitor pattern. I love that the author chose to print the tree out
+in a syntax that is literally a Lisp, so that these javascript-like expressions:
+
+```
+1 + (3 * 7 / 4.0)
+```
+... are printed out like this:
+
+```
+(+ 1.0 (group (/ (* 3.0 7.0) 4.0)))
+```
+
+Also spent some time rewriting the scanner to replace a big chain of `if
+...elif...else` with a dictionary. This feels more "pythonic", as we don't have
+`case` in Python; not sure it was really worth doing though.
+
+And, added line coverage report to my test script, just because.
+
+# Weds Sept 6
+
+## System Design interview practice group
+
+We had a pretty rough time of designing a gmail-scale web mail app.
+A group design exercise with no designated roles is difficult, and we haven't
+really agreed how to approach these... so we tend to be too hesitant to talk,
+or write/draw anything. Maybe we should hammer that out before the next one!
+
+Also, I need to buy [the book](https://www.amazon.com/System-Design-Interview-insiders-Second/dp/B08CMF2CQF/ref=asc_df_B08CMF2CQF/?tag=hyprod-20&linkCode=df0&hvadid=459440273404&hvpos=&hvnetw=g&hvrand=2582250862136724471&hvpone=&hvptwo=&hvqmt=&hvdev=c&hvdvcmdl=&hvlocint=&hvlocphy=1022762&hvtargid=pla-934212337151&psc=1).
+
+Notes on steps:
+
+1. Requirements - functional and non-functional
+   Just write everything down
+
+2. High-level design - start VERY coarse and add to it.
+   More is better *even if it's wrong*
+
+3. Deep dive - go into detail on one or more parts
+
+4. Wrap-up: overview, tradeoffs, additional concerns - fault tolerance etc
+
+
+## Crafting Interpreters
+
+Not much - just some more static typing with mypy,
+writing a little shell script to do both unit and typing tests
+(I *love* little conveniences like this).
+
+I never really got used to Python 3 type declarations before,
+since all of my Python jobs were at places that still used Python 2, sadly.
+I have to say, the syntax is night and day better than [sorbet](https://sorbet.org/)
+for Ruby, which can't help but feel like a bolt-on, because it is.
+
+I still have to look up how to declare various things, but it's mostly very
+readable and easy to remember.
+
+# Tuesday Sept 5
 
 Skipped yesterday (Labor day).
 
