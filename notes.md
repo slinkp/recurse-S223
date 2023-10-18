@@ -1,3 +1,14 @@
+# Fri Sept 15
+
+## Crafting interpreters progress: Ch 12 started and finished!
+
+Oops! Class declaration, instantiation, properties get & set, method dispatch, initializers.
+
+## Never-graduation picnic!
+
+So many feels
+
+
 # Thurs Sept 14
 
 Penultimate pre-never-graduation day!
