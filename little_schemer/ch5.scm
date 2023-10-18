@@ -303,3 +303,107 @@
  (leftmost (list (list (list '() 'four)) 17 '(seventeen)))
  "Nothing when empty list found"
  )
+
+
+(header "eqlist?, p 89-")
+
+;; eqlist first attempt
+(define eqlist?
+  (lambda (l1 l2)
+    (cond
+     ((and (null? l1) (null? l2)) #t)
+     ((or (null? l1) (null? l2)) #f)
+     ((and (atom? l1) (atom? l2)) (equal? l1 l2))
+     ((or (atom? l1) (atom? l2)) #f)
+     ((and (eqlist? (car l1) (car l2)) (eqlist? (cdr l1) (cdr l2))))
+     (else #f)
+     )))
+
+;; eqlist rewritten slightly to use eqan? from ch 4, book suggests this.
+(define eqan?
+  (lambda (a1 a2)
+    (cond
+     ((and (number? a1) (number? a2))
+      (== a1 a2))
+     ((or (number? a1) (number? a2)) #f)
+     (else
+      (eq? a1 a2)))))
+
+(define eqlist?
+  (lambda (l1 l2)
+    (cond
+     ((and (null? l1) (null? l2)) #t)
+     ((or (null? l1) (null? l2)) #f)
+     ((and (atom? l1) (atom? l2)) (eqan? l1 l2))
+     ((or (atom? l1) (atom? l2)) #f)
+     ((and (eqlist? (car l1) (car l2)) (eqlist? (cdr l1) (cdr l2))))
+     (else #f)
+     )))
+
+;; eqlist? rewritten again, book version p 91, not allowing non-list args.
+;; Honestly I prefer mine, though it should be named something more like eqan?
+(define eqlist?
+  (lambda (l1 l2)
+    (cond
+     ((and (null? l1) (null? l2)) #t)
+     ((and (null? l1) (atom? (car l2))) #f)
+     ((null? l1) #f)
+     ((and (atom? (car l1)) (null? l2)) #f)
+     ((and (atom? (car l1)) (atom? (car l2)))
+      (and (eqan? (car l1) (car l2))
+           (eqlist? (cdr l1) (cdr l2))))
+     ((atom? (car l1)) #f)
+     ((null? l2) #f)
+     ((atom? (car l2) #f))
+     (else
+      (and (eqlist? (car l1) (car l2))
+           (eqlist? (cdr l1) (cdr l2)))))))
+
+
+;; eqlist? slightly simplified, book version p 92.
+;; This one I can get behind.
+(define eqlist?
+  (lambda (l1 l2)
+    (cond
+     ((and (null? l1) (null? l2)) #t)
+     ((or (null? l1) (null? l2)) #f)
+     ((and (atom? (car l1)) (atom? (car l2)))
+      (and (eqan? (car l1) (car l2))
+           (eqlist? (cdr l1) (cdr l2))))
+     ((or (atom? (car l1)) (atom? (car l2))) #f)
+     (else
+      (and (eqlist? (car l1) (car l2))
+           (eqlist? (cdr l1) (cdr l2)))))))
+
+
+(expects_eq
+ #t
+ (eqlist? '(strawberry ice cream) '(strawberry ice cream))
+ "Two identical lats compare equal"
+ )
+
+(expects_eq
+ #t
+ (eqlist? '() '())
+ "Two nulls compare equal"
+ )
+
+(expects_eq
+ #f
+ (eqlist? '() '(blah))
+ "null isn't a lat"
+ )
+
+(expects_eq
+ #f
+ (eqlist? '(blah) '())
+ "lat isn't null"
+ )
+
+(expects_eq
+ #f
+ (eqlist? '(blah) '(nope))
+ "different lats"
+ )
+
+ (eqlist? '(almost blah) '(blah))
