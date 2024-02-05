@@ -117,7 +117,7 @@ class PolyphonicAdsrSynth extends PolyphonicInstrumentBase {
                 <<< now, "Interrupting RELEASE with a steal in", me >>>;
                 break;
             }
-            5::ms => now;
+            1::ms => now; // Assume this is good enough resolution
         }
         if ( now >= deadline ) {
             // <<< now, "RELEASE DONE via timeout in", me>>>;
