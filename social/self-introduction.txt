@@ -1,0 +1,33 @@
+Hi recursers! I'm Paul (he/him).
+I'm in Brooklyn so I expect to be spending much of this batch onsite.
+
+As a programmer, I'm self taught, most proficient in Python. I worked on
+mostly web backend, for a series of smallish startups over
+the past 20 years. (That included a long stint at OpenPlans, where I met Nick
+and Sonali before they started Recurse!)
+For the past 4 years, I was a staff developer at Shopify doing Ruby on Rails
+until I was laid off this spring. I still don't feel like a Ruby expert.
+Or a staff developer. Imposter syndrome never really ends for me, but it gets better.
+
+Not having had a formal computer science education, I feel like I still
+have a lot of gaps in fundamentals. Right now I'm most excited to finally
+learn functional programming for real -- I'd like to get fluent in a Lisp.
+Maybe even write a lisp interpreter. I'd like to get into the guts of Emacs
+and see how much damage I can do.
+
+Aside from programming, I am a pretty good bass player and a less-good guitar
+player. I spend a lot of time with my 14-year-old daughter (zero interest in programming).
+I am (almost) divorced and my girlfriend is awesome. I like reading, walking
+outdoors, being at the ocean or in the woods, and yoga though i have really
+slacked off on that. Lately interested in psychotherapy (have been exploring
+different kinds myself).
+
+Also, my cat (Socks aka Li'l Soxie Purrbox) is the best cat, and so is yours!
+
+
+Directory profile:
+
+Before RC: Tons of experience in Python, barely any education
+Interested in learning: Functional programming, interpreters, event-driven
+systems, non-OOP paradigms
+
